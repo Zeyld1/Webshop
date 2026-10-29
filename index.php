@@ -6,6 +6,6 @@
     <title>Document</title>
 </head>
 <body>
-    
+     <a href="forside-demo.html">Klik her for at gå til forside</a>
 </body>
 </html>
