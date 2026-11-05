@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<!--
+  Forside til gaming-webshoppen i pink og mørk, bygget efter Microsoft Fluent 2.
+  Alt ligger i denne ene fil: HTML, CSS og JavaScript.
+  Priserne er demo-priser og skal rettes, før siden bruges rigtigt.
+
+  Fluent-reglerne ligger som variabler i :root: farver, skrift, afstande,
+  afrundede hjørner, skygger og bevægelse. Ret dem dér, så følger hele siden med.
+  Ikonerne er Microsofts Fluent UI System Icons (MIT-licens).
+
+  Sådan tilføjer du et produkt: kopiér en <article class="produkt"> og ret teksten.
+  Sådan tilføjer du et mærke: kopiér en hel <section class="maerke-sektion"> og
+  tilføj en knap i panelet. Knappens data-maerke skal være det samme som sektionens.
+  Pris-sorteringen læser tallet i <p class="pris">, så du skal kun rette prisen ét sted.
+-->
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaming Webshop</title>
+    <style>
+        :root {
+            color-scheme: dark;
+
+            /* Mørke flader: jo højere lag, jo lysere */
+            --flade-1: #141414;
+            --flade-2: #1f1f1f;
+            --flade-3: #292929;
+            --flade-3-hover: #333333;
+
+            /* Tekst og kanter */
+            --tekst-1: #ffffff;
+            --tekst-2: #d6d6d6;
+            --tekst-3: #adadad;
+            --kant-1: #666666;
+            --kant-2: #3d3d3d;
+
+            /* Pink som brandfarve */
+            --pink: #e3008c;
+            --pink-hover: #cc007e;
+            --pink-tekst: #ff8ad1;
+            --pink-toning: rgba(227, 0, 140, .18);
+            --pink-toning-hover: rgba(227, 0, 140, .28);
+
+            /* Skrift */
+            --skrift: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+            --skrift-stor: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+
+            /* Hjørner */
+            --hjoerne-m: 4px;
+            --hjoerne-l: 8px;
+
+            /* Skygger: dybde i stedet for kanter */
+            --skygge-4: 0 0 2px rgba(0, 0, 0, .24), 0 2px 4px rgba(0, 0, 0, .28);
+            --skygge-8: 0 0 2px rgba(0, 0, 0, .24), 0 4px 8px rgba(0, 0, 0, .28);
+            --skygge-16: 0 0 2px rgba(0, 0, 0, .24), 0 8px 16px rgba(0, 0, 0, .28);
+
+            /* Bevægelse */
+            --hurtig: 150ms;
+            --kurve: cubic-bezier(.1, .9, .2, 1);
+
+            --topbar-hoejde: 48px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        body {
+            margin: 0;
+            background: var(--flade-1);
+            color: var(--tekst-1);
+            font-family: var(--skrift);
+            font-size: 14px;
+            line-height: 20px;
+        }
+
+        h1, h2, h3, p {
+            margin: 0;
+        }
+
+        .indhold {
+            width: min(1280px, 100%);
+            margin-inline: auto;
+            padding-inline: 16px;
+        }
+
+        /* ===== TOPBJÆLKE MED ACRYLIC =====
+           Halvgennemsigtig med sløring, så produkterne anes bagved, når man scroller */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: rgba(31, 31, 31, .72);
+            -webkit-backdrop-filter: blur(30px) saturate(140%);
+            backdrop-filter: blur(30px) saturate(140%);
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .topbar .indhold {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: var(--topbar-hoejde);
+        }
+
+        .logo-maerke {
+            width: 20px;
+            height: 20px;
+            background: var(--pink);
+            border-radius: var(--hjoerne-m);
+        }
+
+        .logo {
+            font-size: 16px;
+            line-height: 22px;
+            font-weight: 600;
+        }
+
+        /* ===== BANNER ===== */
+        .banner {
+            margin-block: 16px 24px;
+            padding: 32px;
+            background: linear-gradient(115deg, var(--pink) 0%, #8f0a5f 55%, #2b0f22 100%);
+            border-radius: var(--hjoerne-l);
+            box-shadow: var(--skygge-8);
+        }
+
+        .banner h1 {
+            font-family: var(--skrift-stor);
+            font-size: 40px;
+            line-height: 52px;
+            font-weight: 600;
+        }
+
+        .banner p {
+            max-width: 70ch;
+            margin-top: 4px;
+            font-size: 16px;
+            line-height: 22px;
+        }
+
+        /* ===== LAYOUT: PANEL TIL VENSTRE, PRODUKTER TIL HØJRE ===== */
+        .layout {
+            display: grid;
+            gap: 24px;
+            padding-bottom: 64px;
+        }
+
+        main {
+            min-width: 0;
+        }
+
+        /* ===== PANEL MED MÆRKE OG PRIS ===== */
+        .panel {
+            padding: 12px;
+            background: var(--flade-2);
+            border-radius: var(--hjoerne-l);
+            box-shadow: var(--skygge-4);
+        }
+
+        .panel-titel {
+            display: block;
+            padding: 8px 8px 4px;
+            color: var(--tekst-3);
+            font-size: 12px;
+            line-height: 16px;
+            font-weight: 600;
+        }
+
+        .maerke-liste {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 12px;
+        }
+
+        /* Valget ligner Fluents navigationspunkter med en pink streg ud for det valgte */
+        .maerke-knap {
+            position: relative;
+            width: 100%;
+            min-height: 44px;
+            padding: 8px 12px;
+            background: transparent;
+            border: 0;
+            border-radius: var(--hjoerne-m);
+            color: var(--tekst-2);
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color var(--hurtig) var(--kurve);
+        }
+
+        .maerke-knap:hover {
+            background: var(--flade-3);
+            color: var(--tekst-1);
+        }
+
+        .maerke-knap:active {
+            background: var(--flade-3-hover);
+        }
+
+        .maerke-knap[aria-pressed="true"] {
+            background: var(--pink-toning);
+            color: var(--tekst-1);
+            font-weight: 600;
+        }
+
+        .maerke-knap[aria-pressed="true"]:hover {
+            background: var(--pink-toning-hover);
+        }
+
+        .maerke-knap[aria-pressed="true"]::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 12px;
+            bottom: 12px;
+            width: 3px;
+            background: var(--pink);
+            border-radius: 2px;
+        }
+
+        .pris-valg-felt {
+            padding: 0 8px 8px;
+        }
+
+        .pris-valg {
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 32px 8px 12px;
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: var(--flade-3);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23d6d6d6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            border: 1px solid var(--kant-2);
+            border-bottom-color: var(--tekst-3);
+            border-radius: var(--hjoerne-m);
+            color: var(--tekst-1);
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .pris-valg:hover {
+            background-color: var(--flade-3-hover);
+        }
+
+        .pris-valg:focus {
+            border-bottom: 2px solid var(--pink-tekst);
+        }
+
+        .pris-valg option {
+            background: var(--flade-3);
+        }
+
+        /* Fluents tastaturfokus er en tydelig hvid ramme */
+        .maerke-knap:focus-visible,
+        .pris-valg:focus-visible {
+            outline: 2px solid var(--tekst-1);
+            outline-offset: -2px;
+        }
+
+        /* På store skærme står panelet til venstre og følger med ned ad siden */
+        @media (min-width: 860px) {
+            .layout {
+                grid-template-columns: 240px minmax(0, 1fr);
+                align-items: start;
+            }
+
+            .panel {
+                position: sticky;
+                top: calc(var(--topbar-hoejde) + 16px);
+                max-height: calc(100vh - var(--topbar-hoejde) - 32px);
+                overflow-y: auto;
+            }
+        }
+
+        /* På mobil står mærkerne ved siden af hinanden for at spare plads */
+        @media (max-width: 859px) {
+            .banner {
+                padding: 24px 16px;
+            }
+
+            .banner h1 {
+                font-size: 32px;
+                line-height: 40px;
+            }
+
+            .maerke-liste {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .maerke-knap {
+                width: auto;
+                background: var(--flade-3);
+            }
+
+            .maerke-knap[aria-pressed="true"]::before {
+                left: 12px;
+                right: 12px;
+                top: auto;
+                bottom: 4px;
+                width: auto;
+                height: 3px;
+            }
+        }
+
+        /* ===== MÆRKER & PRODUKTER ===== */
+        .antal-vist {
+            color: var(--tekst-3);
+        }
+
+        .maerke-sektion {
+            padding-top: 16px;
+        }
+
+        .maerke-sektion + .maerke-sektion {
+            padding-top: 40px;
+        }
+
+        .maerke-top {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .maerke-top h2 {
+            font-family: var(--skrift-stor);
+            font-size: 24px;
+            line-height: 32px;
+            font-weight: 600;
+        }
+
+        .antal {
+            color: var(--tekst-3);
+            white-space: nowrap;
+        }
+
+        .produkter {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+            gap: 16px;
+        }
+
+        /* Kortet løfter sig med en større skygge, ligesom et Fluent-kort */
+        .produkt {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--flade-3);
+            border-radius: var(--hjoerne-l);
+            box-shadow: var(--skygge-4);
+            transition: background-color var(--hurtig) var(--kurve), box-shadow var(--hurtig) var(--kurve);
+        }
+
+        .produkt:hover {
+            background: var(--flade-3-hover);
+            box-shadow: var(--skygge-16);
+        }
+
+        .produkt-billede {
+            display: grid;
+            place-items: center;
+            height: 132px;
+            background: linear-gradient(135deg, var(--pink-toning), transparent 70%), var(--flade-2);
+            color: var(--pink-tekst);
+        }
+
+        .produkt-billede svg {
+            width: 64px;
+            height: 64px;
+            fill: currentColor;
+        }
+
+        .produkt-tekst {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex: 1;
+            padding: 12px 16px 16px;
+        }
+
+        .kategori {
+            padding: 2px 8px;
+            background: var(--pink-toning);
+            border-radius: 999px;
+            color: var(--pink-tekst);
+            font-size: 12px;
+            line-height: 16px;
+            font-weight: 600;
+        }
+
+        .produkt h3 {
+            margin-top: 8px;
+            font-size: 16px;
+            line-height: 22px;
+            font-weight: 600;
+        }
+
+        .beskrivelse {
+            margin-block: 4px 12px;
+            color: var(--tekst-2);
+        }
+
+        .pris {
+            margin-top: auto;
+            color: var(--pink-tekst);
+            font-family: var(--skrift-stor);
+            font-size: 24px;
+            line-height: 32px;
+            font-weight: 600;
+        }
+
+        /* Ingen animationer for dem, der har slået dem fra */
+        @media (prefers-reduced-motion: reduce) {
+            .maerke-knap,
+            .produkt {
+                transition: none;
+            }
+        }
+
+        /* Windows' høj kontrast-tilstand fjerner baggrunde, så det valgte får en ramme */
+        @media (forced-colors: active) {
+            .maerke-knap[aria-pressed="true"] {
+                outline: 2px solid Highlight;
+                outline-offset: -2px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fluent UI System Icons fra Microsoft. Defineres én gang og genbruges med <use> -->
+    <svg hidden>
+        <symbol id="ikon-mus" viewBox="0 0 32 32">
+            <path d="M9 4.55v22.6l5.48-7.5A4 4 0 0 1 17.71 18h8.5zM7 3.5a1.48 1.48 0 0 1 2.4-1.17l18.98 14.84A1.6 1.6 0 0 1 27.4 20h-9.69a2 2 0 0 0-1.61.83l-6.23 8.52c-.9 1.24-2.87.6-2.87-.94z"/>
+        </symbol>
+        <symbol id="ikon-tastatur" viewBox="0 0 24 24">
+            <path d="M19.75 5C20.99 5 22 6 22 7.25v9.5C22 18 20.99 19 19.75 19H4.25C3.01 19 2 18 2 16.75v-9.5C2 6.01 3 5 4.25 5zm0 1.5H4.25a.75.75 0 0 0-.75.75v9.5c0 .42.34.75.75.75h15.5c.41 0 .75-.33.75-.75v-9.5a.75.75 0 0 0-.75-.75m-13 8h10.5a.75.75 0 0 1 .1 1.5H6.75a.75.75 0 0 1-.1-1.5zh10.5zM16.5 11a1 1 0 1 1 0 2 1 1 0 0 1 0-2m-6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2m-3 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2m6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2M6 8a1 1 0 1 1 0 2 1 1 0 0 1 0-2m3 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2m3 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2m3 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+        </symbol>
+        <symbol id="ikon-headset" viewBox="0 0 32 32">
+            <path d="M6 12a10 10 0 0 1 20 0v6a4 4 0 0 1-4 4h-2a2 2 0 0 1-2-2v-6c0-1.1.9-2 2-2h4a8 8 0 1 0-16 0h4a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H8a4 4 0 0 0 4 4h1.17a3 3 0 1 1 0 2H12a6 6 0 0 1-6-6zm2 2v6h4v-6zm16 0h-4v6h2a2 2 0 0 0 2-2zm-7 13a1 1 0 1 0-2 0 1 1 0 0 0 2 0"/>
+        </symbol>
+    </svg>
+
+    <header class="topbar">
+        <div class="indhold">
+            <span class="logo-maerke" aria-hidden="true"></span>
+            <span class="logo">Gaming Webshop</span>
+        </div>
+    </header>
+
+    <div class="indhold">
+        <div class="banner">
+            <h1>Udstyr til dit setup</h1>
+            <p>Mus, tastaturer og headsets fra de mærker, du kender. Vælg et mærke, og sortér efter pris.</p>
+        </div>
+    </div>
+
+    <div class="indhold layout">
+
+    <!-- Panelet i venstre side: knappens data-maerke skal passe med sektionens data-maerke -->
+    <aside class="panel" aria-label="Vælg mærke og sortér efter pris">
+        <h2 class="panel-titel">Mærke</h2>
+        <div class="maerke-liste">
+            <button class="maerke-knap" type="button" data-maerke="alle" aria-pressed="true">Alle mærker</button>
+            <button class="maerke-knap" type="button" data-maerke="logitech" aria-pressed="false">Logitech</button>
+            <button class="maerke-knap" type="button" data-maerke="razer" aria-pressed="false">Razer</button>
+            <button class="maerke-knap" type="button" data-maerke="steelseries" aria-pressed="false">SteelSeries</button>
+            <button class="maerke-knap" type="button" data-maerke="corsair" aria-pressed="false">Corsair</button>
+        </div>
+
+        <label class="panel-titel" for="pris-valg">Pris</label>
+        <div class="pris-valg-felt">
+            <select class="pris-valg" id="pris-valg">
+                <option value="standard">Standard</option>
+                <option value="lav">Laveste pris først</option>
+                <option value="hoej">Højeste pris først</option>
+            </select>
+        </div>
+    </aside>
+
+    <main id="produkter">
+        <p class="antal-vist" id="antal-vist" aria-live="polite">Viser 12 produkter</p>
+
+        <!-- ===== LOGITECH ===== -->
+        <section class="maerke-sektion" data-maerke="logitech">
+            <div class="maerke-top">
+                <h2>Logitech</h2>
+                <span class="antal">3 produkter</span>
+            </div>
+            <div class="produkter">
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-mus"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Mus</span>
+                        <h3>Logitech G502 X Lightspeed</h3>
+                        <p class="beskrivelse">Trådløs gamingmus med HERO 25K-sensor og hybride kontakter. God til dig, der vil have mange programmerbare knapper.</p>
+                        <p class="pris">1.099 kr.</p>
+                    </div>
+                </article>
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-tastatur"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Tastatur</span>
+                        <h3>Logitech G Pro X TKL Lightspeed</h3>
+                        <p class="beskrivelse">Trådløst mekanisk tastatur uden numerisk tastatur. Giver mere plads til musen på bordet.</p>
+                        <p class="pris">1.799 kr.</p>
+                    </div>
+                </article>
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-headset"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Headset</span>
+                        <h3>Logitech G Pro X 2 Lightspeed</h3>
+                        <p class="beskrivelse">Trådløst headset med 50 mm grafen-drivere og aftagelig mikrofon. Lavet til lange gaming-sessioner.</p>
+                        <p class="pris">1.999 kr.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ===== RAZER ===== -->
+        <section class="maerke-sektion" data-maerke="razer">
+            <div class="maerke-top">
+                <h2>Razer</h2>
+                <span class="antal">3 produkter</span>
+            </div>
+            <div class="produkter">
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-mus"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Mus</span>
+                        <h3>Razer DeathAdder V3 Pro</h3>
+                        <p class="beskrivelse">Ergonomisk trådløs mus på kun 63 gram. Et godt valg til hurtige skydespil.</p>
+                        <p class="pris">1.199 kr.</p>
+                    </div>
+                </article>
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-tastatur"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Tastatur</span>
+                        <h3>Razer Huntsman V3 Pro</h3>
+                        <p class="beskrivelse">Tastatur i fuld størrelse med analoge optiske kontakter, hvor du selv kan justere, hvor langt en tast skal trykkes ned.</p>
+                        <p class="pris">1.999 kr.</p>
+                    </div>
+                </article>
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-headset"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Headset</span>
+                        <h3>Razer BlackShark V2 Pro</h3>
+                        <p class="beskrivelse">Trådløst headset med 50 mm drivere og aftagelig mikrofon, så dine holdkammerater kan høre dig tydeligt.</p>
+                        <p class="pris">1.399 kr.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ===== STEELSERIES ===== -->
+        <section class="maerke-sektion" data-maerke="steelseries">
+            <div class="maerke-top">
+                <h2>SteelSeries</h2>
+                <span class="antal">3 produkter</span>
+            </div>
+            <div class="produkter">
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-mus"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Mus</span>
+                        <h3>SteelSeries Aerox 5 Wireless</h3>
+                        <p class="beskrivelse">Let trådløs mus på 74 gram med hulmønster i skallen og ekstra sideknapper til MMO- og battle royale-spil.</p>
+                        <p class="pris">1.099 kr.</p>
+                    </div>
+                </article>
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-tastatur"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Tastatur</span>
+                        <h3>SteelSeries Apex Pro TKL</h3>
+                        <p class="beskrivelse">Kompakt tastatur med justerbare OmniPoint-kontakter. Du bestemmer selv, hvor følsom hver tast skal være.</p>
+                        <p class="pris">1.699 kr.</p>
+                    </div>
+                </article>
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-headset"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Headset</span>
+                        <h3>SteelSeries Arctis Nova Pro Wireless</h3>
+                        <p class="beskrivelse">Trådløst headset med aktiv støjreduktion og to udskiftelige batterier, så du kan skifte batteri uden at stoppe.</p>
+                        <p class="pris">2.799 kr.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ===== CORSAIR ===== -->
+        <section class="maerke-sektion" data-maerke="corsair">
+            <div class="maerke-top">
+                <h2>Corsair</h2>
+                <span class="antal">3 produkter</span>
+            </div>
+            <div class="produkter">
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-mus"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Mus</span>
+                        <h3>Corsair M75 Air Wireless</h3>
+                        <p class="beskrivelse">Ultralet trådløs mus på 60 gram med en enkel form. God til dig, der vil have en mus, der næsten ikke føles.</p>
+                        <p class="pris">999 kr.</p>
+                    </div>
+                </article>
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-tastatur"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Tastatur</span>
+                        <h3>Corsair K70 RGB Pro</h3>
+                        <p class="beskrivelse">Mekanisk tastatur i fuld størrelse med solid aluminiumsramme, RGB-lys og medieknapper.</p>
+                        <p class="pris">1.299 kr.</p>
+                    </div>
+                </article>
+                <article class="produkt">
+                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-headset"/></svg></div>
+                    <div class="produkt-tekst">
+                        <span class="kategori">Headset</span>
+                        <h3>Corsair HS80 RGB Wireless</h3>
+                        <p class="beskrivelse">Trådløst headset med Dolby Atmos og en klar mikrofon. Komfortabelt hovedbånd til mange timers brug.</p>
+                        <p class="pris">1.099 kr.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+    </main>
+
+    </div>
+
+    <script>
+        const knapper = document.querySelectorAll('.maerke-knap');
+        const sektioner = document.querySelectorAll('.maerke-sektion');
+        const prisValg = document.querySelector('#pris-valg');
+        const antalVist = document.querySelector('#antal-vist');
+        const layout = document.querySelector('.layout');
+        const topbar = document.querySelector('.topbar');
+
+        // Husk hvert mærkes oprindelige rækkefølge, så "Standard" kan vise den igen
+        const lister = [...document.querySelectorAll('.produkter')].map(function (liste) {
+            return { liste: liste, standard: [...liste.children] };
+        });
+
+        // Laver fx teksten "1.099 kr." om til tallet 1099
+        function prisPaa(produkt) {
+            const tekst = produkt.querySelector('.pris').textContent;
+            return Number(tekst.replace(/\D/g, ''));
+        }
+
+        // Sorterer inden for hvert mærke, så produkterne stadig er fordelt efter mærker
+        function sorterEfterPris() {
+            lister.forEach(function (punkt) {
+                const produkter = [...punkt.standard];
+
+                if (prisValg.value === 'lav') {
+                    produkter.sort(function (a, b) { return prisPaa(a) - prisPaa(b); });
+                } else if (prisValg.value === 'hoej') {
+                    produkter.sort(function (a, b) { return prisPaa(b) - prisPaa(a); });
+                }
+
+                punkt.liste.append(...produkter);
+            });
+        }
+
+        knapper.forEach(function (knap) {
+            knap.addEventListener('click', function () {
+                const valgt = knap.dataset.maerke;
+
+                // Markér den valgte knap
+                knapper.forEach(function (k) {
+                    k.setAttribute('aria-pressed', k === knap ? 'true' : 'false');
+                });
+
+                // Vis kun det valgte mærke, eller alle mærker
+                sektioner.forEach(function (sektion) {
+                    sektion.hidden = valgt !== 'alle' && sektion.dataset.maerke !== valgt;
+                });
+
+                const antal = document.querySelectorAll('.maerke-sektion:not([hidden]) .produkt').length;
+                antalVist.textContent = 'Viser ' + antal + ' produkter';
+
+                // Hvis man har scrollet ned, hopper siden op til starten af produkterne.
+                // Topbjælken trækkes fra, så den ikke dækker for dem.
+                const start = layout.getBoundingClientRect().top + window.scrollY - topbar.offsetHeight - 16;
+                if (window.scrollY > start) {
+                    window.scrollTo(0, start);
+                }
+            });
+        });
+
+        prisValg.addEventListener('change', sorterEfterPris);
+
+        // Nogle browsere husker valget i listen, når siden genindlæses
+        sorterEfterPris();
+    </script>
+</body>
+</html>
