@@ -3,10 +3,12 @@
   Forside til gaming-webshoppen. Alt ligger i denne ene fil: HTML, CSS og JavaScript.
   Priserne er demo-priser og skal rettes, før siden bruges rigtigt.
 
-  Sådan tilføjer du et produkt: kopiér en <article class="produkt"> og ret teksten.
-  Sådan tilføjer du et mærke: kopiér en hel <section class="maerke-sektion"> og
-  tilføj en knap i boksen. Knappens data-maerke skal være det samme som sektionens.
-  Pris-sorteringen læser tallet i <p class="pris">, så du skal kun rette prisen ét sted.
+  Sådan tilføjer du et produkt: tilføj et nyt { ... } i listen "produkter" nederst i <script>.
+  Et nyt mærke kommer automatisk med i boksen til venstre, når et produkt har det mærke.
+  Kategori skal være "Mus", "Tastatur" eller "Headset", så det rigtige ikon vises.
+
+  Kurv, favoritter og valgt visning gemmes i browseren (localStorage),
+  så de stadig er der, når siden genindlæses.
 -->
 <html lang="da">
 <head>
@@ -17,21 +19,27 @@
         /* ===== BASE ===== */
         :root {
             color-scheme: dark;
+
             /* 60-30-10: de tre farver, der bygger hele designet */
-            --baggrund: #0b0e14;  /* 60 %: sidens baggrund og billedfelter */
-            --kort: #1b2233;      /* 30 %: toppen, boksen og produkternes tekstfelter */
-            --accent: #d7ff3e;    /* 10 %: priser, valgt knap og glød */
+            --baggrund: #0b0b0b;  /* 60 %: sidens baggrund og billedfelter */
+            --kort: #1a1a1a;      /* 30 %: topbjælke, boks, kort, kurv og bund */
+            --accent: #76b900;    /* 10 %: priser, valgte knapper og glød */
 
             /* Tekst og kanter, som ikke tæller med i de tre farver */
-            --kant: #323c54;
-            --tekst: #f2f4f7;
-            --daempet: #aab2c2;
-            --accent-tekst: #11140a;
+            --kant: #2e2e2e;
+            --kant-lys: #444444;
+            --tekst: #f2f2f2;
+            --daempet: #a3a3a3;
+            --accent-hover: #8bd600;
+            --accent-tekst: #0b0b0b;
 
             /* Glød i accentfarven */
-            --gloed-svag: 0 0 22px rgba(215, 255, 62, .18);
-            --gloed-staerk: 0 0 10px rgba(215, 255, 62, .55), 0 0 36px rgba(215, 255, 62, .35);
+            --gloed-svag: 0 0 24px rgba(118, 185, 0, .12);
+            --gloed-staerk: 0 0 10px rgba(118, 185, 0, .45), 0 0 32px rgba(118, 185, 0, .25);
+
+            --hjoerne: 2px;
             --overskrift: Bahnschrift, "DIN Alternate", "Arial Narrow", Arial, sans-serif;
+            --header-hoejde: 66px;
         }
 
         * {
@@ -40,6 +48,10 @@
 
         [hidden] {
             display: none !important;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
@@ -54,95 +66,436 @@
             margin: 0;
         }
 
+        button {
+            font: inherit;
+            color: inherit;
+        }
+
+        svg {
+            flex-shrink: 0;
+        }
+
         .indhold {
-            width: min(1240px, 100%);
+            width: min(1280px, 100%);
             margin-inline: auto;
             padding-inline: 16px;
         }
 
-        /* ===== TOP ===== */
-        .top {
-            margin-bottom: 24px;
-            padding-block: 20px 24px;
-            background: var(--kort);
-            border-bottom: 1px solid var(--accent);
-            box-shadow: 0 6px 36px rgba(215, 255, 62, .22);
+        /* Skjult på skærmen, men læses op af skærmlæsere */
+        .skjult {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .ikon {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ===== KNAPPER ===== */
+        .knap-primaer,
+        .knap-sekundaer {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 48px;
+            padding: 10px 24px;
+            border-radius: var(--hjoerne);
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color .15s, border-color .15s, box-shadow .15s, color .15s;
+        }
+
+        .knap-primaer {
+            background: var(--accent);
+            border: 1px solid var(--accent);
+            color: var(--accent-tekst);
+            box-shadow: var(--gloed-svag);
+        }
+
+        .knap-primaer:hover {
+            background: var(--accent-hover);
+            box-shadow: var(--gloed-staerk);
+        }
+
+        .knap-sekundaer {
+            background: transparent;
+            border: 1px solid var(--kant-lys);
+            color: var(--tekst);
+        }
+
+        .knap-sekundaer:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ===== TOPBJÆLKE ===== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(26, 26, 26, .92);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-top: 2px solid var(--accent);
+            border-bottom: 1px solid var(--kant);
+        }
+
+        .header .indhold {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 24px;
+            min-height: 64px;
+            padding-block: 10px;
         }
 
         .logo {
+            color: var(--tekst);
             font-family: var(--overskrift);
+            font-size: 1.15rem;
             font-weight: 700;
-            font-size: 1.05rem;
             letter-spacing: .08em;
+            text-decoration: none;
             text-transform: uppercase;
         }
 
-        .logo span,
-        .top h1 span {
+        .logo span {
             color: var(--accent);
-            text-shadow: 0 0 18px rgba(215, 255, 62, .6);
         }
 
-        .top h1 {
+        .soeg {
+            position: relative;
+            flex: 1;
+            max-width: 520px;
+        }
+
+        .soeg-ikon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            translate: 0 -50%;
+            color: var(--daempet);
+            pointer-events: none;
+        }
+
+        .soeg input {
+            width: 100%;
+            min-height: 44px;
+            padding: 8px 40px 8px 42px;
+            background: var(--baggrund);
+            border: 1px solid var(--kant-lys);
+            border-radius: var(--hjoerne);
+            color: var(--tekst);
+            font: inherit;
+        }
+
+        .soeg input::placeholder {
+            color: var(--daempet);
+        }
+
+        .soeg input:focus {
+            border-color: var(--accent);
+            box-shadow: var(--gloed-svag);
+            outline: none;
+        }
+
+        .soeg-genvej {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            translate: 0 -50%;
+            padding: 0 7px;
+            border: 1px solid var(--kant-lys);
+            border-radius: var(--hjoerne);
+            color: var(--daempet);
+            font-family: inherit;
+            font-size: .8rem;
+        }
+
+        .soeg input:focus ~ .soeg-genvej,
+        .soeg input:not(:placeholder-shown) ~ .soeg-genvej {
+            display: none;
+        }
+
+        .kurv-aabn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            margin-left: auto;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--kant-lys);
+            border-radius: var(--hjoerne);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .kurv-aabn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .kurv-antal {
+            min-width: 22px;
+            padding: 0 6px;
+            background: var(--accent);
+            border-radius: 999px;
+            color: var(--accent-tekst);
+            font-size: .8rem;
+            font-weight: 700;
+            line-height: 22px;
+            text-align: center;
+            box-shadow: var(--gloed-staerk);
+        }
+
+        .kurv-antal.bump {
+            animation: bump .35s ease-out;
+        }
+
+        @keyframes bump {
+            40% { transform: scale(1.35); }
+        }
+
+        /* På mobil kommer søgefeltet på sin egen linje */
+        @media (max-width: 700px) {
+            :root {
+                --header-hoejde: 124px; /* højere, fordi søgefeltet har sin egen linje */
+            }
+
+            .soeg {
+                order: 3;
+                flex-basis: 100%;
+                max-width: none;
+            }
+
+            .soeg-genvej {
+                display: none;
+            }
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding-block: 64px;
+            border-bottom: 1px solid var(--kant);
+            background:
+                radial-gradient(ellipse 50% 70% at 80% 50%, rgba(118, 185, 0, .16), transparent 70%),
+                linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px),
+                var(--baggrund);
+            background-size: auto, 48px 48px, 48px 48px, auto;
+        }
+
+        .hero .indhold {
+            display: grid;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .hero-etiket {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--accent);
+            font-size: .85rem;
+            font-weight: 700;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+
+        .hero-etiket::before {
+            content: "";
+            width: 28px;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .hero h1 {
             margin-top: 16px;
             font-family: var(--overskrift);
-            font-size: clamp(2.5rem, 7vw, 4rem);
+            font-size: clamp(2.6rem, 6.5vw, 4.75rem);
             font-weight: 700;
             line-height: 1;
             text-transform: uppercase;
         }
 
-        .top p {
-            max-width: 70ch;
-            margin-top: 8px;
+        .hero h1 span {
+            color: var(--accent);
+            text-shadow: 0 0 24px rgba(118, 185, 0, .45);
+        }
+
+        .hero-tekst {
+            max-width: 52ch;
+            margin-top: 20px;
             color: var(--daempet);
             font-size: 1.1rem;
+        }
+
+        .hero-knapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .hero-tal {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            margin: 40px 0 0;
+            padding: 24px 0 0;
+            border-top: 1px solid var(--kant);
+            list-style: none;
+        }
+
+        .hero-tal strong {
+            display: block;
+            font-family: var(--overskrift);
+            font-size: 2rem;
+            line-height: 1.1;
+        }
+
+        .hero-tal span {
+            color: var(--daempet);
+            font-size: .9rem;
+        }
+
+        /* Pynt i højre side: tre felter med produktikoner */
+        .hero-visual {
+            display: none;
+        }
+
+        @media (min-width: 960px) {
+            .hero .indhold {
+                grid-template-columns: 1.2fr 1fr;
+            }
+
+            .hero-visual {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+        }
+
+        .hero-felt {
+            display: grid;
+            place-items: center;
+            gap: 8px;
+            min-height: 150px;
+            padding: 20px;
+            background: rgba(26, 26, 26, .85);
+            border: 1px solid var(--kant);
+            border-radius: var(--hjoerne);
+            box-shadow: var(--gloed-svag);
+            color: var(--accent);
+        }
+
+        .hero-felt:first-child {
+            grid-column: 1 / -1;
+            min-height: 190px;
+            border-color: rgba(118, 185, 0, .5);
+            box-shadow: var(--gloed-staerk);
+        }
+
+        .hero-felt svg {
+            width: 72px;
+            height: 72px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .hero-felt:first-child svg {
+            width: 110px;
+            height: 110px;
+        }
+
+        .hero-felt span {
+            color: var(--daempet);
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: .14em;
+            text-transform: uppercase;
         }
 
         /* ===== LAYOUT: BOKS TIL VENSTRE, PRODUKTER TIL HØJRE ===== */
         .layout {
             display: grid;
             gap: 24px;
-            padding-bottom: 72px;
+            padding-block: 32px 72px;
         }
 
         main {
             min-width: 0;
+            scroll-margin-top: calc(var(--header-hoejde) + 16px);
         }
 
-        /* ===== BOKS MED MÆRKE OG PRIS ===== */
+        /* ===== BOKS MED FILTRE ===== */
         .boks {
-            padding: 20px;
             background: var(--kort);
             border: 1px solid var(--kant);
-            border-radius: 8px;
+            border-radius: var(--hjoerne);
             box-shadow: var(--gloed-svag);
+        }
+
+        .boks-del {
+            padding: 20px;
+        }
+
+        .boks-del + .boks-del {
+            border-top: 1px solid var(--kant);
         }
 
         .boks-titel {
             display: block;
-            margin-bottom: 10px;
-            font-family: var(--overskrift);
-            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--daempet);
+            font-size: .8rem;
             font-weight: 700;
+            letter-spacing: .14em;
             text-transform: uppercase;
         }
 
         .maerke-liste {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 24px;
+            gap: 6px;
         }
 
         .maerke-knap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
             min-height: 44px;
-            padding: 8px 16px;
+            padding: 8px 12px;
             background: var(--baggrund);
             border: 1px solid var(--kant);
-            border-radius: 4px;
-            color: var(--tekst);
-            font: inherit;
+            border-radius: var(--hjoerne);
             font-weight: 600;
             text-align: left;
             cursor: pointer;
@@ -151,7 +504,17 @@
 
         .maerke-knap:hover {
             border-color: var(--accent);
-            box-shadow: var(--gloed-svag);
+        }
+
+        .maerke-antal {
+            min-width: 26px;
+            padding: 0 6px;
+            background: var(--kort);
+            border-radius: 999px;
+            color: var(--daempet);
+            font-size: .8rem;
+            line-height: 22px;
+            text-align: center;
         }
 
         .maerke-knap[aria-pressed="true"] {
@@ -161,20 +524,74 @@
             box-shadow: var(--gloed-staerk);
         }
 
+        .maerke-knap[aria-pressed="true"] .maerke-antal {
+            background: rgba(0, 0, 0, .2);
+            color: var(--accent-tekst);
+        }
+
         .pris-valg {
             width: 100%;
             min-height: 44px;
             padding: 8px 10px;
             background: var(--baggrund);
             border: 1px solid var(--kant);
-            border-radius: 4px;
+            border-radius: var(--hjoerne);
             color: var(--tekst);
             font: inherit;
             cursor: pointer;
         }
 
-        .maerke-knap:focus-visible,
-        .pris-valg:focus-visible {
+        /* Kontakt (tænd/sluk) til favoritter */
+        .kontakt {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 44px;
+            cursor: pointer;
+        }
+
+        .kontakt input {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+        }
+
+        .kontakt-spor {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--baggrund);
+            border: 1px solid var(--kant-lys);
+            border-radius: 999px;
+            transition: background-color .15s, border-color .15s;
+        }
+
+        .kontakt-spor::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            background: var(--daempet);
+            border-radius: 50%;
+            transition: transform .15s, background-color .15s;
+        }
+
+        .kontakt input:checked + .kontakt-spor {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: var(--gloed-svag);
+        }
+
+        .kontakt input:checked + .kontakt-spor::after {
+            background: var(--accent-tekst);
+            transform: translateX(20px);
+        }
+
+        .kontakt input:focus-visible + .kontakt-spor {
             outline: 2px solid var(--accent);
             outline-offset: 2px;
         }
@@ -188,8 +605,8 @@
 
             .boks {
                 position: sticky;
-                top: 16px;
-                max-height: calc(100vh - 32px);
+                top: calc(var(--header-hoejde) + 16px);
+                max-height: calc(100vh - var(--header-hoejde) - 32px);
                 overflow-y: auto;
             }
 
@@ -198,17 +615,99 @@
             }
         }
 
-        /* ===== MÆRKER & PRODUKTER ===== */
+        /* ===== VÆRKTØJSLINJE OVER PRODUKTERNE ===== */
+        .vaerktoej {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--kant);
+        }
+
         .antal-vist {
             color: var(--daempet);
         }
 
-        .maerke-sektion {
-            padding-top: 24px;
+        .antal-vist:focus {
+            outline: none;
         }
 
-        .maerke-sektion + .maerke-sektion {
-            padding-top: 48px;
+        .visning {
+            display: flex;
+            gap: 4px;
+        }
+
+        .visning-knap {
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            background: transparent;
+            border: 1px solid var(--kant);
+            border-radius: var(--hjoerne);
+            color: var(--daempet);
+            cursor: pointer;
+        }
+
+        .visning-knap:hover {
+            color: var(--tekst);
+        }
+
+        .visning-knap[aria-pressed="true"] {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .aktive-filtre {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 12px;
+        }
+
+        .aktive-filtre:empty {
+            display: none;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 36px;
+            padding: 4px 8px 4px 12px;
+            background: var(--kort);
+            border: 1px solid var(--kant-lys);
+            border-radius: var(--hjoerne);
+            font-size: .9rem;
+            cursor: pointer;
+        }
+
+        .chip:hover {
+            border-color: var(--accent);
+        }
+
+        .chip .ikon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .chip-nulstil {
+            min-height: 36px;
+            padding: 4px 8px;
+            background: none;
+            border: 0;
+            color: var(--accent);
+            font-size: .9rem;
+            font-weight: 600;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* ===== MÆRKER & PRODUKTER ===== */
+        .maerke-sektion {
+            padding-top: 32px;
         }
 
         .maerke-top {
@@ -220,9 +719,20 @@
         }
 
         .maerke-top h2 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-family: var(--overskrift);
-            font-size: clamp(1.6rem, 4vw, 2.25rem);
+            font-size: clamp(1.6rem, 4vw, 2.1rem);
             text-transform: uppercase;
+        }
+
+        .maerke-top h2::before {
+            content: "";
+            width: 4px;
+            height: .9em;
+            background: var(--accent);
+            box-shadow: var(--gloed-staerk);
         }
 
         .antal {
@@ -242,7 +752,7 @@
             overflow: hidden;
             background: var(--kort);
             border: 1px solid var(--kant);
-            border-radius: 8px;
+            border-radius: var(--hjoerne);
             box-shadow: var(--gloed-svag);
             transition: transform .15s, border-color .15s, box-shadow .15s;
         }
@@ -254,18 +764,15 @@
         }
 
         .produkt-billede {
+            position: relative;
             display: grid;
             place-items: center;
-            height: 150px;
-            background: var(--baggrund);
+            height: 160px;
+            background: radial-gradient(circle at 50% 130%, rgba(118, 185, 0, .2), transparent 60%), var(--baggrund);
             color: var(--daempet);
         }
 
-        .produkt:hover .produkt-billede {
-            color: var(--accent);
-        }
-
-        .produkt-billede svg {
+        .produkt-billede > svg {
             width: 76px;
             height: 76px;
             fill: none;
@@ -273,50 +780,442 @@
             stroke-width: 1.5;
             stroke-linecap: round;
             stroke-linejoin: round;
+            transition: color .15s;
+        }
+
+        .produkt:hover .produkt-billede > svg {
+            color: var(--accent);
+        }
+
+        .favorit {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            background: rgba(11, 11, 11, .75);
+            border: 1px solid var(--kant);
+            border-radius: var(--hjoerne);
+            color: var(--daempet);
+            cursor: pointer;
+        }
+
+        .favorit:hover {
+            color: var(--tekst);
+        }
+
+        .favorit[aria-pressed="true"] {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .favorit[aria-pressed="true"] .ikon {
+            fill: currentColor;
         }
 
         .produkt-tekst {
-            display: flex;
-            flex-direction: column;
             flex: 1;
-            padding: 16px 16px 0;
+            padding: 16px;
         }
 
         .kategori {
-            color: var(--daempet);
-            font-size: .85rem;
+            color: var(--accent);
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
         }
 
         .produkt h3 {
-            margin-top: 2px;
-            font-size: 1.15rem;
+            margin-top: 4px;
+            font-size: 1.1rem;
             line-height: 1.3;
         }
 
-        /* Prisen er en accent-bjælke i bunden af kortet.
-           order: 1 flytter den visuelt ned under beskrivelsen. */
-        .pris {
-            order: 1;
-            margin: auto -16px 0;
-            padding: 10px 16px;
-            background: var(--accent);
-            color: var(--accent-tekst);
-            font-family: var(--overskrift);
-            font-size: 1.4rem;
-            font-weight: 700;
-        }
-
         .beskrivelse {
-            margin-block: 10px 16px;
+            margin-top: 8px;
             color: var(--daempet);
             font-size: .95rem;
         }
 
+        /* Prisen og kurv-knappen i en grøn bjælke i bunden af kortet */
+        .pris-bjaelke {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 10px 10px 16px;
+            background: var(--accent);
+            color: var(--accent-tekst);
+        }
+
+        .pris {
+            font-family: var(--overskrift);
+            font-size: 1.4rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .kurv-knap {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 44px;
+            padding: 8px 14px;
+            background: var(--baggrund);
+            border: 0;
+            border-radius: var(--hjoerne);
+            color: var(--tekst);
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: color .15s;
+        }
+
+        .kurv-knap:hover {
+            color: var(--accent);
+        }
+
+        .pris-bjaelke :focus-visible {
+            outline-color: var(--accent-tekst);
+        }
+
+        /* Listevisning: billede, tekst og pris på én række */
+        .liste-visning .produkter {
+            grid-template-columns: 1fr;
+        }
+
+        .liste-visning .produkt {
+            display: grid;
+            grid-template-columns: 180px minmax(0, 1fr) 210px;
+        }
+
+        .liste-visning .produkt-billede {
+            height: auto;
+            min-height: 140px;
+        }
+
+        .liste-visning .pris-bjaelke {
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .liste-visning .produkt {
+                grid-template-columns: 96px minmax(0, 1fr);
+            }
+
+            .liste-visning .produkt-billede > svg {
+                width: 44px;
+                height: 44px;
+            }
+
+            .liste-visning .favorit {
+                top: 4px;
+                right: 4px;
+            }
+
+            .liste-visning .pris-bjaelke {
+                grid-column: 1 / -1;
+                flex-direction: row;
+                align-items: center;
+                padding: 10px 10px 10px 16px;
+            }
+        }
+
+        /* Når ingen produkter passer til filtrene */
+        .tom {
+            margin-top: 32px;
+            padding: 48px 16px;
+            border: 1px dashed var(--kant-lys);
+            border-radius: var(--hjoerne);
+            text-align: center;
+        }
+
+        .tom h2 {
+            font-family: var(--overskrift);
+            font-size: 1.5rem;
+            text-transform: uppercase;
+        }
+
+        .tom p {
+            margin: 8px 0 24px;
+            color: var(--daempet);
+        }
+
+        /* ===== KURV (åbner fra højre side) ===== */
+        .kurv {
+            width: min(420px, 100%);
+            max-width: 100%;
+            height: 100%;
+            max-height: 100%;
+            margin: 0 0 0 auto;
+            padding: 0;
+            background: var(--kort);
+            border: 0;
+            border-left: 1px solid var(--kant);
+            color: var(--tekst);
+            box-shadow: -8px 0 40px rgba(0, 0, 0, .6);
+        }
+
+        .kurv[open] {
+            animation: kurv-ind .25s ease-out;
+        }
+
+        @keyframes kurv-ind {
+            from { transform: translateX(100%); }
+        }
+
+        .kurv::backdrop {
+            background: rgba(0, 0, 0, .65);
+            -webkit-backdrop-filter: blur(3px);
+            backdrop-filter: blur(3px);
+        }
+
+        .kurv-indre {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .kurv-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 16px 16px 20px;
+            border-bottom: 1px solid var(--kant);
+        }
+
+        .kurv-top h2 {
+            font-family: var(--overskrift);
+            font-size: 1.4rem;
+            text-transform: uppercase;
+        }
+
+        .luk {
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            background: transparent;
+            border: 1px solid var(--kant);
+            border-radius: var(--hjoerne);
+            cursor: pointer;
+        }
+
+        .luk:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .kurv-liste {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 20px;
+        }
+
+        .kurv-liste ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .kurv-tom {
+            padding-block: 48px;
+            color: var(--daempet);
+            text-align: center;
+        }
+
+        .vare {
+            display: grid;
+            grid-template-columns: 56px minmax(0, 1fr) auto;
+            gap: 12px;
+            padding-block: 16px;
+            border-bottom: 1px solid var(--kant);
+        }
+
+        .vare-ikon {
+            display: grid;
+            place-items: center;
+            width: 56px;
+            height: 56px;
+            background: var(--baggrund);
+            border-radius: var(--hjoerne);
+            color: var(--accent);
+        }
+
+        .vare-ikon svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .vare-navn {
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .vare-pris {
+            color: var(--daempet);
+            font-size: .85rem;
+        }
+
+        .antal-styring {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 8px;
+            border: 1px solid var(--kant-lys);
+            border-radius: var(--hjoerne);
+        }
+
+        .antal-styring button {
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: 0;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        .antal-styring button:hover {
+            color: var(--accent);
+        }
+
+        .antal-styring span {
+            min-width: 28px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .vare-hoejre {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .vare-total {
+            font-family: var(--overskrift);
+            font-size: 1.1rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .vare-fjern {
+            min-height: 36px;
+            padding: 0;
+            background: none;
+            border: 0;
+            color: var(--daempet);
+            font-size: .85rem;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .vare-fjern:hover {
+            color: var(--tekst);
+        }
+
+        .kurv-bund {
+            display: grid;
+            gap: 12px;
+            padding: 20px;
+            border-top: 1px solid var(--kant);
+        }
+
+        .kurv-total {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            font-size: 1.05rem;
+        }
+
+        .kurv-total strong {
+            color: var(--accent);
+            font-family: var(--overskrift);
+            font-size: 1.75rem;
+        }
+
+        /* ===== BESKED, TIL-TOP OG BUND ===== */
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            z-index: 20;
+            max-width: calc(100% - 32px);
+            padding: 12px 18px;
+            background: var(--kort);
+            border: 1px solid var(--kant);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--hjoerne);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .6), var(--gloed-svag);
+            font-weight: 600;
+            opacity: 0;
+            transform: translate(-50%, 16px);
+            transition: opacity .2s, transform .2s;
+            pointer-events: none;
+        }
+
+        .toast.vis {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .til-top {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 15;
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            background: var(--kort);
+            border: 1px solid var(--kant-lys);
+            border-radius: var(--hjoerne);
+            cursor: pointer;
+        }
+
+        .til-top:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: var(--gloed-staerk);
+        }
+
+        .bund {
+            padding-block: 32px;
+            background: var(--kort);
+            border-top: 1px solid var(--kant);
+        }
+
+        .bund .indhold {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            color: var(--daempet);
+        }
+
         /* Ingen bevægelse for dem, der har slået animationer fra */
         @media (prefers-reduced-motion: reduce) {
-            .produkt,
-            .maerke-knap {
-                transition: none;
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
+                animation: none !important;
             }
 
             .produkt:hover {
@@ -325,9 +1224,9 @@
         }
     </style>
 </head>
-<body>
+<body id="top">
 
-    <!-- Ikonerne defineres én gang her og genbruges på produkterne med <use> -->
+    <!-- Ikonerne defineres én gang her og genbruges med <use> -->
     <svg hidden>
         <symbol id="ikon-mus" viewBox="0 0 48 48">
             <rect x="13" y="5" width="22" height="38" rx="11"/>
@@ -343,254 +1242,658 @@
             <rect x="35" y="26" width="8" height="13" rx="3"/>
             <path d="M39 39v1a4 4 0 0 1-4 4h-7"/>
         </symbol>
+        <symbol id="ikon-soeg" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m20 20-3.5-3.5"/>
+        </symbol>
+        <symbol id="ikon-kurv" viewBox="0 0 24 24">
+            <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/>
+            <circle cx="10" cy="20.5" r="1"/>
+            <circle cx="17" cy="20.5" r="1"/>
+        </symbol>
+        <symbol id="ikon-hjerte" viewBox="0 0 24 24">
+            <path d="M12 20.5 4.6 13.3a4.8 4.8 0 0 1 6.8-6.8l.6.6.6-.6a4.8 4.8 0 0 1 6.8 6.8z"/>
+        </symbol>
+        <symbol id="ikon-gitter" viewBox="0 0 24 24">
+            <rect x="4" y="4" width="6.5" height="6.5" rx="1"/>
+            <rect x="13.5" y="4" width="6.5" height="6.5" rx="1"/>
+            <rect x="4" y="13.5" width="6.5" height="6.5" rx="1"/>
+            <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1"/>
+        </symbol>
+        <symbol id="ikon-liste" viewBox="0 0 24 24">
+            <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>
+        </symbol>
+        <symbol id="ikon-luk" viewBox="0 0 24 24">
+            <path d="M6 6l12 12M18 6 6 18"/>
+        </symbol>
+        <symbol id="ikon-plus" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14"/>
+        </symbol>
+        <symbol id="ikon-pil-op" viewBox="0 0 24 24">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+        </symbol>
     </svg>
 
-    <header class="top">
+    <!-- ===== TOPBJÆLKE ===== -->
+    <header class="header">
         <div class="indhold">
-            <div class="logo">Gaming <span>Webshop</span></div>
-            <h1>Udstyr til dit <span>setup</span></h1>
-            <p>Mus, tastaturer og headsets fra de mærker, du kender. Vælg et mærke, og sortér efter pris.</p>
+            <a class="logo" href="#top">Gaming <span>Webshop</span></a>
+
+            <div class="soeg" role="search">
+                <svg class="ikon soeg-ikon" aria-hidden="true"><use href="#ikon-soeg"/></svg>
+                <label class="skjult" for="soeg">Søg efter produkter</label>
+                <input id="soeg" type="search" placeholder="Søg efter mus, tastatur, mærke …" autocomplete="off">
+                <kbd class="soeg-genvej" aria-hidden="true">/</kbd>
+            </div>
+
+            <button class="kurv-aabn" type="button" id="kurv-knap" aria-label="Kurv, 0 varer">
+                <svg class="ikon" aria-hidden="true"><use href="#ikon-kurv"/></svg>
+                <span>Kurv</span>
+                <span class="kurv-antal" id="kurv-antal" hidden>0</span>
+            </button>
         </div>
     </header>
 
+    <!-- ===== HERO ===== -->
+    <section class="hero" aria-labelledby="hero-titel">
+        <div class="indhold">
+            <div>
+                <p class="hero-etiket">Gaming-udstyr</p>
+                <h1 id="hero-titel">Udstyr til dit <span>setup</span></h1>
+                <p class="hero-tekst">Mus, tastaturer og headsets fra de mærker, du kender. Søg, vælg et mærke og sortér efter pris. Gem dine favoritter, og læg varer i kurven.</p>
+                <div class="hero-knapper">
+                    <a class="knap-primaer" href="#produkter">Se produkter</a>
+                    <button class="knap-sekundaer" type="button" id="hero-kurv">
+                        <svg class="ikon" aria-hidden="true"><use href="#ikon-kurv"/></svg>
+                        Åbn kurv
+                    </button>
+                </div>
+                <!-- Tallene regnes ud fra produktlisten i JavaScript -->
+                <ul class="hero-tal">
+                    <li><strong id="tal-produkter">12</strong><span>produkter</span></li>
+                    <li><strong id="tal-maerker">4</strong><span>mærker</span></li>
+                    <li><strong id="tal-kategorier">3</strong><span>kategorier</span></li>
+                </ul>
+            </div>
+
+            <div class="hero-visual" aria-hidden="true">
+                <div class="hero-felt"><svg><use href="#ikon-tastatur"/></svg><span>Tastaturer</span></div>
+                <div class="hero-felt"><svg><use href="#ikon-mus"/></svg><span>Mus</span></div>
+                <div class="hero-felt"><svg><use href="#ikon-headset"/></svg><span>Headsets</span></div>
+            </div>
+        </div>
+    </section>
+
     <div class="indhold layout">
 
-    <!-- Boksen i venstre side: knappens data-maerke skal passe med sektionens data-maerke -->
-    <aside class="boks" aria-label="Vælg mærke og sortér efter pris">
-        <h2 class="boks-titel">Mærke</h2>
-        <div class="maerke-liste">
-            <button class="maerke-knap" type="button" data-maerke="alle" aria-pressed="true">Alle mærker</button>
-            <button class="maerke-knap" type="button" data-maerke="logitech" aria-pressed="false">Logitech</button>
-            <button class="maerke-knap" type="button" data-maerke="razer" aria-pressed="false">Razer</button>
-            <button class="maerke-knap" type="button" data-maerke="steelseries" aria-pressed="false">SteelSeries</button>
-            <button class="maerke-knap" type="button" data-maerke="corsair" aria-pressed="false">Corsair</button>
-        </div>
-
-        <label class="boks-titel" for="pris-valg">Pris</label>
-        <select class="pris-valg" id="pris-valg">
-            <option value="standard">Standard</option>
-            <option value="lav">Laveste pris først</option>
-            <option value="hoej">Højeste pris først</option>
-        </select>
-    </aside>
-
-    <main id="produkter">
-        <p class="antal-vist" id="antal-vist" aria-live="polite">Viser 12 produkter</p>
-
-        <!-- ===== LOGITECH ===== -->
-        <section class="maerke-sektion" data-maerke="logitech">
-            <div class="maerke-top">
-                <h2>Logitech</h2>
-                <span class="antal">3 produkter</span>
+        <!-- ===== BOKS MED FILTRE ===== -->
+        <aside class="boks" aria-label="Filtre">
+            <div class="boks-del">
+                <h2 class="boks-titel">Mærke</h2>
+                <!-- Knapperne laves automatisk ud fra produktlisten -->
+                <div class="maerke-liste" id="maerke-liste"></div>
             </div>
-            <div class="produkter">
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-mus"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Mus</span>
-                        <h3>Logitech G502 X Lightspeed</h3>
-                        <p class="pris">1.099 kr.</p>
-                        <p class="beskrivelse">Trådløs gamingmus med HERO 25K-sensor og hybride kontakter. God til dig, der vil have mange programmerbare knapper.</p>
-                    </div>
-                </article>
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-tastatur"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Tastatur</span>
-                        <h3>Logitech G Pro X TKL Lightspeed</h3>
-                        <p class="pris">1.799 kr.</p>
-                        <p class="beskrivelse">Trådløst mekanisk tastatur uden numerisk tastatur. Giver mere plads til musen på bordet.</p>
-                    </div>
-                </article>
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-headset"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Headset</span>
-                        <h3>Logitech G Pro X 2 Lightspeed</h3>
-                        <p class="pris">1.999 kr.</p>
-                        <p class="beskrivelse">Trådløst headset med 50 mm grafen-drivere og aftagelig mikrofon. Lavet til lange gaming-sessioner.</p>
-                    </div>
-                </article>
-            </div>
-        </section>
 
-        <!-- ===== RAZER ===== -->
-        <section class="maerke-sektion" data-maerke="razer">
-            <div class="maerke-top">
-                <h2>Razer</h2>
-                <span class="antal">3 produkter</span>
+            <div class="boks-del">
+                <label class="boks-titel" for="pris-valg">Pris</label>
+                <select class="pris-valg" id="pris-valg">
+                    <option value="standard">Standard</option>
+                    <option value="lav">Laveste pris først</option>
+                    <option value="hoej">Højeste pris først</option>
+                </select>
             </div>
-            <div class="produkter">
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-mus"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Mus</span>
-                        <h3>Razer DeathAdder V3 Pro</h3>
-                        <p class="pris">1.199 kr.</p>
-                        <p class="beskrivelse">Ergonomisk trådløs mus på kun 63 gram. Et godt valg til hurtige skydespil.</p>
-                    </div>
-                </article>
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-tastatur"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Tastatur</span>
-                        <h3>Razer Huntsman V3 Pro</h3>
-                        <p class="pris">1.999 kr.</p>
-                        <p class="beskrivelse">Tastatur i fuld størrelse med analoge optiske kontakter, hvor du selv kan justere, hvor langt en tast skal trykkes ned.</p>
-                    </div>
-                </article>
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-headset"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Headset</span>
-                        <h3>Razer BlackShark V2 Pro</h3>
-                        <p class="pris">1.399 kr.</p>
-                        <p class="beskrivelse">Trådløst headset med 50 mm drivere og aftagelig mikrofon, så dine holdkammerater kan høre dig tydeligt.</p>
-                    </div>
-                </article>
-            </div>
-        </section>
 
-        <!-- ===== STEELSERIES ===== -->
-        <section class="maerke-sektion" data-maerke="steelseries">
-            <div class="maerke-top">
-                <h2>SteelSeries</h2>
-                <span class="antal">3 produkter</span>
+            <div class="boks-del">
+                <h2 class="boks-titel">Favoritter</h2>
+                <label class="kontakt">
+                    <input type="checkbox" id="kun-favoritter">
+                    <span class="kontakt-spor" aria-hidden="true"></span>
+                    <span>Vis kun favoritter (<span id="fav-antal">0</span>)</span>
+                </label>
             </div>
-            <div class="produkter">
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-mus"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Mus</span>
-                        <h3>SteelSeries Aerox 5 Wireless</h3>
-                        <p class="pris">1.099 kr.</p>
-                        <p class="beskrivelse">Let trådløs mus på 74 gram med hulmønster i skallen og ekstra sideknapper til MMO- og battle royale-spil.</p>
-                    </div>
-                </article>
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-tastatur"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Tastatur</span>
-                        <h3>SteelSeries Apex Pro TKL</h3>
-                        <p class="pris">1.699 kr.</p>
-                        <p class="beskrivelse">Kompakt tastatur med justerbare OmniPoint-kontakter. Du bestemmer selv, hvor følsom hver tast skal være.</p>
-                    </div>
-                </article>
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-headset"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Headset</span>
-                        <h3>SteelSeries Arctis Nova Pro Wireless</h3>
-                        <p class="pris">2.799 kr.</p>
-                        <p class="beskrivelse">Trådløst headset med aktiv støjreduktion og to udskiftelige batterier, så du kan skifte batteri uden at stoppe.</p>
-                    </div>
-                </article>
-            </div>
-        </section>
+        </aside>
 
-        <!-- ===== CORSAIR ===== -->
-        <section class="maerke-sektion" data-maerke="corsair">
-            <div class="maerke-top">
-                <h2>Corsair</h2>
-                <span class="antal">3 produkter</span>
+        <!-- ===== PRODUKTER ===== -->
+        <main id="produkter">
+            <div class="vaerktoej">
+                <p class="antal-vist" id="antal-vist" tabindex="-1" aria-live="polite">Viser 12 af 12 produkter</p>
+                <div class="visning" role="group" aria-label="Visning">
+                    <button class="visning-knap" type="button" data-visning="gitter" aria-pressed="true" aria-label="Vis som gitter">
+                        <svg class="ikon" aria-hidden="true"><use href="#ikon-gitter"/></svg>
+                    </button>
+                    <button class="visning-knap" type="button" data-visning="liste" aria-pressed="false" aria-label="Vis som liste">
+                        <svg class="ikon" aria-hidden="true"><use href="#ikon-liste"/></svg>
+                    </button>
+                </div>
             </div>
-            <div class="produkter">
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-mus"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Mus</span>
-                        <h3>Corsair M75 Air Wireless</h3>
-                        <p class="pris">999 kr.</p>
-                        <p class="beskrivelse">Ultralet trådløs mus på 60 gram med en enkel form. God til dig, der vil have en mus, der næsten ikke føles.</p>
-                    </div>
-                </article>
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-tastatur"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Tastatur</span>
-                        <h3>Corsair K70 RGB Pro</h3>
-                        <p class="pris">1.299 kr.</p>
-                        <p class="beskrivelse">Mekanisk tastatur i fuld størrelse med solid aluminiumsramme, RGB-lys og medieknapper.</p>
-                    </div>
-                </article>
-                <article class="produkt">
-                    <div class="produkt-billede"><svg aria-hidden="true"><use href="#ikon-headset"/></svg></div>
-                    <div class="produkt-tekst">
-                        <span class="kategori">Headset</span>
-                        <h3>Corsair HS80 RGB Wireless</h3>
-                        <p class="pris">1.099 kr.</p>
-                        <p class="beskrivelse">Trådløst headset med Dolby Atmos og en klar mikrofon. Komfortabelt hovedbånd til mange timers brug.</p>
-                    </div>
-                </article>
-            </div>
-        </section>
+            <div class="aktive-filtre" id="aktive-filtre"></div>
 
-    </main>
-
+            <!-- Produkterne tegnes her af JavaScript -->
+            <div id="produkt-indhold"></div>
+        </main>
     </div>
 
+    <footer class="bund">
+        <div class="indhold">
+            <a class="logo" href="#top">Gaming <span>Webshop</span></a>
+            <p>&copy; <span id="aar">2026</span> Gaming Webshop</p>
+        </div>
+    </footer>
+
+    <!-- ===== KURV ===== -->
+    <dialog class="kurv" id="kurv" aria-labelledby="kurv-titel">
+        <div class="kurv-indre">
+            <div class="kurv-top">
+                <h2 id="kurv-titel">Din kurv</h2>
+                <button class="luk" type="button" id="kurv-luk" aria-label="Luk kurven">
+                    <svg class="ikon" aria-hidden="true"><use href="#ikon-luk"/></svg>
+                </button>
+            </div>
+            <div class="kurv-liste" id="kurv-liste"></div>
+            <div class="kurv-bund">
+                <div class="kurv-total">
+                    <span>I alt</span>
+                    <strong id="kurv-total">0 kr.</strong>
+                </div>
+                <button class="knap-sekundaer" type="button" id="kurv-fortsaet">Fortsæt med at handle</button>
+            </div>
+        </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    <button class="til-top" type="button" id="til-top" aria-label="Til toppen af siden" hidden>
+        <svg class="ikon" aria-hidden="true"><use href="#ikon-pil-op"/></svg>
+    </button>
+
     <script>
-        const knapper = document.querySelectorAll('.maerke-knap');
-        const sektioner = document.querySelectorAll('.maerke-sektion');
-        const prisValg = document.querySelector('#pris-valg');
-        const antalVist = document.querySelector('#antal-vist');
-        const layout = document.querySelector('.layout');
+        // ===== PRODUKTER =====
+        // Tilføj, ret eller slet produkter her. id skal være unikt.
+        const produkter = [
+            { id: 'g502x', maerke: 'Logitech', kategori: 'Mus', navn: 'Logitech G502 X Lightspeed', pris: 1099,
+              beskrivelse: 'Trådløs gamingmus med HERO 25K-sensor og hybride kontakter. God til dig, der vil have mange programmerbare knapper.' },
+            { id: 'gprox-tkl', maerke: 'Logitech', kategori: 'Tastatur', navn: 'Logitech G Pro X TKL Lightspeed', pris: 1799,
+              beskrivelse: 'Trådløst mekanisk tastatur uden numerisk tastatur. Giver mere plads til musen på bordet.' },
+            { id: 'gprox2', maerke: 'Logitech', kategori: 'Headset', navn: 'Logitech G Pro X 2 Lightspeed', pris: 1999,
+              beskrivelse: 'Trådløst headset med 50 mm grafen-drivere og aftagelig mikrofon. Lavet til lange gaming-sessioner.' },
 
-        // Husk hvert mærkes oprindelige rækkefølge, så "Standard" kan vise den igen
-        const lister = [...document.querySelectorAll('.produkter')].map(function (liste) {
-            return { liste: liste, standard: [...liste.children] };
-        });
+            { id: 'deathadder-v3', maerke: 'Razer', kategori: 'Mus', navn: 'Razer DeathAdder V3 Pro', pris: 1199,
+              beskrivelse: 'Ergonomisk trådløs mus på kun 63 gram. Et godt valg til hurtige skydespil.' },
+            { id: 'huntsman-v3', maerke: 'Razer', kategori: 'Tastatur', navn: 'Razer Huntsman V3 Pro', pris: 1999,
+              beskrivelse: 'Tastatur i fuld størrelse med analoge optiske kontakter, hvor du selv kan justere, hvor langt en tast skal trykkes ned.' },
+            { id: 'blackshark-v2', maerke: 'Razer', kategori: 'Headset', navn: 'Razer BlackShark V2 Pro', pris: 1399,
+              beskrivelse: 'Trådløst headset med 50 mm drivere og aftagelig mikrofon, så dine holdkammerater kan høre dig tydeligt.' },
 
-        // Laver fx teksten "1.099 kr." om til tallet 1099
-        function prisPaa(produkt) {
-            const tekst = produkt.querySelector('.pris').textContent;
-            return Number(tekst.replace(/\D/g, ''));
+            { id: 'aerox5', maerke: 'SteelSeries', kategori: 'Mus', navn: 'SteelSeries Aerox 5 Wireless', pris: 1099,
+              beskrivelse: 'Let trådløs mus på 74 gram med hulmønster i skallen og ekstra sideknapper til MMO- og battle royale-spil.' },
+            { id: 'apex-pro-tkl', maerke: 'SteelSeries', kategori: 'Tastatur', navn: 'SteelSeries Apex Pro TKL', pris: 1699,
+              beskrivelse: 'Kompakt tastatur med justerbare OmniPoint-kontakter. Du bestemmer selv, hvor følsom hver tast skal være.' },
+            { id: 'arctis-nova-pro', maerke: 'SteelSeries', kategori: 'Headset', navn: 'SteelSeries Arctis Nova Pro Wireless', pris: 2799,
+              beskrivelse: 'Trådløst headset med aktiv støjreduktion og to udskiftelige batterier, så du kan skifte batteri uden at stoppe.' },
+
+            { id: 'm75-air', maerke: 'Corsair', kategori: 'Mus', navn: 'Corsair M75 Air Wireless', pris: 999,
+              beskrivelse: 'Ultralet trådløs mus på 60 gram med en enkel form. God til dig, der vil have en mus, der næsten ikke føles.' },
+            { id: 'k70-pro', maerke: 'Corsair', kategori: 'Tastatur', navn: 'Corsair K70 RGB Pro', pris: 1299,
+              beskrivelse: 'Mekanisk tastatur i fuld størrelse med solid aluminiumsramme, RGB-lys og medieknapper.' },
+            { id: 'hs80', maerke: 'Corsair', kategori: 'Headset', navn: 'Corsair HS80 RGB Wireless', pris: 1099,
+              beskrivelse: 'Trådløst headset med Dolby Atmos og en klar mikrofon. Komfortabelt hovedbånd til mange timers brug.' },
+        ];
+
+        const ikoner = { Mus: 'ikon-mus', Tastatur: 'ikon-tastatur', Headset: 'ikon-headset' };
+
+        // Mærkerne i den rækkefølge, de står i listen ovenfor
+        const maerker = [...new Set(produkter.map(function (p) { return p.maerke; }))];
+
+        // ===== GEM I BROWSEREN =====
+        // try/catch, fordi localStorage kan være slået fra (fx i privat vindue)
+        function hent(navn, standard) {
+            try {
+                const vaerdi = localStorage.getItem(navn);
+                return vaerdi ? JSON.parse(vaerdi) : standard;
+            } catch (fejl) {
+                return standard;
+            }
+        }
+
+        function gem(navn, vaerdi) {
+            try {
+                localStorage.setItem(navn, JSON.stringify(vaerdi));
+            } catch (fejl) {
+                // Ikke gemt, men siden virker stadig
+            }
+        }
+
+        // ===== TILSTAND: hvad brugeren har valgt lige nu =====
+        const tilstand = {
+            maerke: 'alle',
+            sortering: 'standard',
+            soegning: '',
+            kunFavoritter: false,
+            visning: hent('visning', 'gitter'),
+        };
+
+        let kurv = hent('kurv', {});          // fx { g502x: 2 }
+        let favoritter = new Set(hent('favoritter', []));
+
+        // Fjern varer fra en gammel kurv, hvis produktet ikke findes længere
+        kurv = Object.fromEntries(Object.entries(kurv).filter(function (par) {
+            return findProdukt(par[0]) && par[1] > 0;
+        }));
+
+        // ===== HJÆLPEFUNKTIONER =====
+        function $(vaelger) {
+            return document.querySelector(vaelger);
+        }
+
+        function findProdukt(id) {
+            return produkter.find(function (p) { return p.id === id; });
+        }
+
+        // 1099 bliver til "1.099 kr."
+        function kr(tal) {
+            return tal.toLocaleString('da-DK') + ' kr.';
+        }
+
+        // Gør tekst sikker, før den sættes ind i HTML (bruges til det, brugeren skriver)
+        function sikker(tekst) {
+            return String(tekst).replace(/[&<>"']/g, function (tegn) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[tegn];
+            });
+        }
+
+        function flertal(antal, en, flere) {
+            return antal + ' ' + (antal === 1 ? en : flere);
+        }
+
+        const el = {
+            maerkeListe: $('#maerke-liste'),
+            prisValg: $('#pris-valg'),
+            soeg: $('#soeg'),
+            kunFavoritter: $('#kun-favoritter'),
+            favAntal: $('#fav-antal'),
+            antalVist: $('#antal-vist'),
+            aktiveFiltre: $('#aktive-filtre'),
+            indhold: $('#produkt-indhold'),
+            visningKnapper: document.querySelectorAll('.visning-knap'),
+            header: $('.header'),
+            produkterStart: $('#produkter'),
+            kurvKnap: $('#kurv-knap'),
+            kurvAntal: $('#kurv-antal'),
+            kurv: $('#kurv'),
+            kurvListe: $('#kurv-liste'),
+            kurvTotal: $('#kurv-total'),
+            kurvLuk: $('#kurv-luk'),
+            toast: $('#toast'),
+            tilTop: $('#til-top'),
+        };
+
+        // ===== MÆRKE-KNAPPER (laves ud fra produktlisten) =====
+        function lavMaerkeKnapper() {
+            const valg = ['alle'].concat(maerker);
+            el.maerkeListe.innerHTML = valg.map(function (m) {
+                const antal = m === 'alle' ? produkter.length : produkter.filter(function (p) { return p.maerke === m; }).length;
+                const navn = m === 'alle' ? 'Alle mærker' : m;
+                return '<button class="maerke-knap" type="button" data-maerke="' + m + '" aria-pressed="false">' +
+                    '<span>' + navn + '</span><span class="maerke-antal">' + antal + '</span></button>';
+            }).join('');
+        }
+
+        // ===== FILTRERING OG SORTERING =====
+        function filtreredeProdukter() {
+            const s = tilstand.soegning.trim().toLowerCase();
+            return produkter.filter(function (p) {
+                const passerMaerke = tilstand.maerke === 'alle' || p.maerke === tilstand.maerke;
+                const passerFavorit = !tilstand.kunFavoritter || favoritter.has(p.id);
+                const tekst = (p.navn + ' ' + p.maerke + ' ' + p.kategori + ' ' + p.beskrivelse).toLowerCase();
+                const passerSoegning = !s || tekst.includes(s);
+                return passerMaerke && passerFavorit && passerSoegning;
+            });
         }
 
         // Sorterer inden for hvert mærke, så produkterne stadig er fordelt efter mærker
-        function sorterEfterPris() {
-            lister.forEach(function (punkt) {
-                const produkter = [...punkt.standard];
-
-                if (prisValg.value === 'lav') {
-                    produkter.sort(function (a, b) { return prisPaa(a) - prisPaa(b); });
-                } else if (prisValg.value === 'hoej') {
-                    produkter.sort(function (a, b) { return prisPaa(b) - prisPaa(a); });
-                }
-
-                punkt.liste.append(...produkter);
-            });
+        function sorter(liste) {
+            const kopi = liste.slice();
+            if (tilstand.sortering === 'lav') {
+                kopi.sort(function (a, b) { return a.pris - b.pris; });
+            } else if (tilstand.sortering === 'hoej') {
+                kopi.sort(function (a, b) { return b.pris - a.pris; });
+            }
+            return kopi;
         }
 
-        knapper.forEach(function (knap) {
+        // ===== TEGN PRODUKTERNE =====
+        function kortHtml(p) {
+            const erFavorit = favoritter.has(p.id);
+            return '' +
+                '<article class="produkt">' +
+                    '<div class="produkt-billede">' +
+                        '<svg aria-hidden="true"><use href="#' + ikoner[p.kategori] + '"/></svg>' +
+                        '<button class="favorit" type="button" data-favorit="' + p.id + '" aria-pressed="' + erFavorit + '" aria-label="Gem ' + p.navn + ' som favorit">' +
+                            '<svg class="ikon" aria-hidden="true"><use href="#ikon-hjerte"/></svg>' +
+                        '</button>' +
+                    '</div>' +
+                    '<div class="produkt-tekst">' +
+                        '<span class="kategori">' + p.kategori + '</span>' +
+                        '<h3>' + p.navn + '</h3>' +
+                        '<p class="beskrivelse">' + p.beskrivelse + '</p>' +
+                    '</div>' +
+                    '<div class="pris-bjaelke">' +
+                        '<p class="pris">' + kr(p.pris) + '</p>' +
+                        '<button class="kurv-knap" type="button" data-kurv="' + p.id + '" aria-label="Læg ' + p.navn + ' i kurven">' +
+                            '<svg class="ikon" aria-hidden="true"><use href="#ikon-plus"/></svg>Læg i kurv' +
+                        '</button>' +
+                    '</div>' +
+                '</article>';
+        }
+
+        function visProdukter() {
+            const liste = filtreredeProdukter();
+
+            const sektioner = maerker.map(function (m) {
+                const varer = sorter(liste.filter(function (p) { return p.maerke === m; }));
+                if (varer.length === 0) return '';
+                return '' +
+                    '<section class="maerke-sektion">' +
+                        '<div class="maerke-top">' +
+                            '<h2>' + m + '</h2>' +
+                            '<span class="antal">' + flertal(varer.length, 'produkt', 'produkter') + '</span>' +
+                        '</div>' +
+                        '<div class="produkter">' + varer.map(kortHtml).join('') + '</div>' +
+                    '</section>';
+            }).join('');
+
+            if (liste.length === 0) {
+                el.indhold.innerHTML = '' +
+                    '<div class="tom">' +
+                        '<h2>Ingen produkter fundet</h2>' +
+                        '<p>' + (tilstand.kunFavoritter && favoritter.size === 0
+                            ? 'Du har ingen favoritter endnu. Tryk på hjertet ved et produkt for at gemme det.'
+                            : 'Prøv et andet søgeord, eller fjern nogle af filtrene.') + '</p>' +
+                        '<button class="knap-primaer" type="button" data-nulstil>Nulstil filtre</button>' +
+                    '</div>';
+            } else {
+                el.indhold.innerHTML = sektioner;
+            }
+
+            el.indhold.classList.toggle('liste-visning', tilstand.visning === 'liste');
+            el.antalVist.textContent = 'Viser ' + liste.length + ' af ' + flertal(produkter.length, 'produkt', 'produkter');
+
+            el.maerkeListe.querySelectorAll('.maerke-knap').forEach(function (knap) {
+                knap.setAttribute('aria-pressed', knap.dataset.maerke === tilstand.maerke ? 'true' : 'false');
+            });
+            el.visningKnapper.forEach(function (knap) {
+                knap.setAttribute('aria-pressed', knap.dataset.visning === tilstand.visning ? 'true' : 'false');
+            });
+
+            visAktiveFiltre();
+        }
+
+        // Små "chips" der viser, hvilke filtre der er slået til. Klik fjerner filteret.
+        function visAktiveFiltre() {
+            const filtre = [];
+            if (tilstand.maerke !== 'alle') filtre.push({ noegle: 'maerke', tekst: tilstand.maerke });
+            if (tilstand.soegning.trim()) filtre.push({ noegle: 'soegning', tekst: '"' + tilstand.soegning.trim() + '"' });
+            if (tilstand.kunFavoritter) filtre.push({ noegle: 'favoritter', tekst: 'Favoritter' });
+            if (tilstand.sortering !== 'standard') {
+                filtre.push({ noegle: 'sortering', tekst: tilstand.sortering === 'lav' ? 'Laveste pris først' : 'Højeste pris først' });
+            }
+
+            if (filtre.length === 0) {
+                el.aktiveFiltre.innerHTML = '';
+                return;
+            }
+
+            el.aktiveFiltre.innerHTML = filtre.map(function (f) {
+                return '<button class="chip" type="button" data-fjern="' + f.noegle + '" aria-label="Fjern filter: ' + sikker(f.tekst) + '">' +
+                    sikker(f.tekst) + '<svg class="ikon" aria-hidden="true"><use href="#ikon-luk"/></svg></button>';
+            }).join('') + '<button class="chip-nulstil" type="button" data-nulstil>Nulstil alle</button>';
+        }
+
+        function nulstil() {
+            tilstand.maerke = 'alle';
+            tilstand.sortering = 'standard';
+            tilstand.soegning = '';
+            tilstand.kunFavoritter = false;
+            el.prisValg.value = 'standard';
+            el.soeg.value = '';
+            el.kunFavoritter.checked = false;
+            visProdukter();
+        }
+
+        // Hvis man har scrollet ned, hopper siden op til starten af produkterne
+        function hopTilProdukter() {
+            const start = el.produkterStart.getBoundingClientRect().top + window.scrollY - el.header.offsetHeight - 16;
+            if (window.scrollY > start) {
+                window.scrollTo(0, start);
+            }
+        }
+
+        // ===== FAVORITTER =====
+        function skiftFavorit(id, knap) {
+            const p = findProdukt(id);
+            if (favoritter.has(id)) {
+                favoritter.delete(id);
+                visBesked(p.navn + ' er fjernet fra favoritter');
+            } else {
+                favoritter.add(id);
+                visBesked(p.navn + ' er gemt som favorit');
+            }
+            gem('favoritter', [...favoritter]);
+            el.favAntal.textContent = favoritter.size;
+
+            if (tilstand.kunFavoritter) {
+                visProdukter();
+                el.antalVist.focus();
+            } else {
+                knap.setAttribute('aria-pressed', favoritter.has(id) ? 'true' : 'false');
+            }
+        }
+
+        // ===== KURV =====
+        function laegIKurv(id) {
+            kurv[id] = (kurv[id] || 0) + 1;
+            gemKurv();
+            visBesked(findProdukt(id).navn + ' er lagt i kurven');
+
+            // Lille hop i tallet på kurv-knappen
+            el.kurvAntal.classList.remove('bump');
+            void el.kurvAntal.offsetWidth;
+            el.kurvAntal.classList.add('bump');
+        }
+
+        function gemKurv() {
+            gem('kurv', kurv);
+            visKurv();
+        }
+
+        function visKurv() {
+            const ider = Object.keys(kurv);
+            let antalIalt = 0;
+            let total = 0;
+
+            const linjer = ider.map(function (id) {
+                const p = findProdukt(id);
+                const antal = kurv[id];
+                antalIalt += antal;
+                total += antal * p.pris;
+                return '' +
+                    '<li class="vare">' +
+                        '<div class="vare-ikon"><svg aria-hidden="true"><use href="#' + ikoner[p.kategori] + '"/></svg></div>' +
+                        '<div>' +
+                            '<p class="vare-navn">' + p.navn + '</p>' +
+                            '<p class="vare-pris">' + kr(p.pris) + ' pr. stk.</p>' +
+                            '<div class="antal-styring">' +
+                                '<button type="button" data-minus="' + p.id + '" aria-label="Fjern én ' + p.navn + '">−</button>' +
+                                '<span aria-label="Antal: ' + antal + '">' + antal + '</span>' +
+                                '<button type="button" data-plus="' + p.id + '" aria-label="Tilføj én ' + p.navn + '">+</button>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="vare-hoejre">' +
+                            '<p class="vare-total">' + kr(antal * p.pris) + '</p>' +
+                            '<button class="vare-fjern" type="button" data-fjern-vare="' + p.id + '" aria-label="Fjern ' + p.navn + ' fra kurven">Fjern</button>' +
+                        '</div>' +
+                    '</li>';
+            });
+
+            el.kurvListe.innerHTML = ider.length === 0
+                ? '<p class="kurv-tom">Din kurv er tom.</p>'
+                : '<ul>' + linjer.join('') + '</ul>';
+
+            el.kurvTotal.textContent = kr(total);
+            el.kurvAntal.textContent = antalIalt;
+            el.kurvAntal.hidden = antalIalt === 0;
+            el.kurvKnap.setAttribute('aria-label', 'Kurv, ' + flertal(antalIalt, 'vare', 'varer'));
+        }
+
+        function aabnKurv() {
+            el.kurv.showModal();
+        }
+
+        // ===== BESKED NEDERST PÅ SIDEN =====
+        let beskedTimer;
+        function visBesked(tekst) {
+            el.toast.textContent = tekst;
+            el.toast.classList.add('vis');
+            clearTimeout(beskedTimer);
+            beskedTimer = setTimeout(function () {
+                el.toast.classList.remove('vis');
+            }, 2600);
+        }
+
+        // ===== HÆNDELSER =====
+        el.maerkeListe.addEventListener('click', function (e) {
+            const knap = e.target.closest('[data-maerke]');
+            if (!knap) return;
+            tilstand.maerke = knap.dataset.maerke;
+            visProdukter();
+            hopTilProdukter();
+        });
+
+        el.prisValg.addEventListener('change', function () {
+            tilstand.sortering = el.prisValg.value;
+            visProdukter();
+        });
+
+        el.soeg.addEventListener('input', function () {
+            tilstand.soegning = el.soeg.value;
+            visProdukter();
+        });
+
+        el.kunFavoritter.addEventListener('change', function () {
+            tilstand.kunFavoritter = el.kunFavoritter.checked;
+            visProdukter();
+        });
+
+        el.visningKnapper.forEach(function (knap) {
             knap.addEventListener('click', function () {
-                const valgt = knap.dataset.maerke;
-
-                // Markér den valgte knap
-                knapper.forEach(function (k) {
-                    k.setAttribute('aria-pressed', k === knap ? 'true' : 'false');
-                });
-
-                // Vis kun det valgte mærke, eller alle mærker
-                sektioner.forEach(function (sektion) {
-                    sektion.hidden = valgt !== 'alle' && sektion.dataset.maerke !== valgt;
-                });
-
-                const antal = document.querySelectorAll('.maerke-sektion:not([hidden]) .produkt').length;
-                antalVist.textContent = 'Viser ' + antal + ' produkter';
-
-                // Hvis man har scrollet ned, hopper siden op til starten af produkterne
-                const start = layout.getBoundingClientRect().top + window.scrollY - 16;
-                if (window.scrollY > start) {
-                    window.scrollTo(0, start);
-                }
+                tilstand.visning = knap.dataset.visning;
+                gem('visning', tilstand.visning);
+                visProdukter();
             });
         });
 
-        prisValg.addEventListener('change', sorterEfterPris);
+        // Ét klik-lyt på hele produktområdet i stedet for ét pr. knap
+        el.indhold.addEventListener('click', function (e) {
+            const kurvKnap = e.target.closest('[data-kurv]');
+            const favoritKnap = e.target.closest('[data-favorit]');
+            if (kurvKnap) laegIKurv(kurvKnap.dataset.kurv);
+            if (favoritKnap) skiftFavorit(favoritKnap.dataset.favorit, favoritKnap);
+            if (e.target.closest('[data-nulstil]')) {
+                nulstil();
+                el.antalVist.focus();
+            }
+        });
 
-        // Nogle browsere husker valget i listen, når siden genindlæses
-        sorterEfterPris();
+        el.aktiveFiltre.addEventListener('click', function (e) {
+            const chip = e.target.closest('[data-fjern]');
+            if (e.target.closest('[data-nulstil]')) {
+                nulstil();
+            } else if (chip) {
+                const noegle = chip.dataset.fjern;
+                if (noegle === 'maerke') tilstand.maerke = 'alle';
+                if (noegle === 'soegning') { tilstand.soegning = ''; el.soeg.value = ''; }
+                if (noegle === 'favoritter') { tilstand.kunFavoritter = false; el.kunFavoritter.checked = false; }
+                if (noegle === 'sortering') { tilstand.sortering = 'standard'; el.prisValg.value = 'standard'; }
+                visProdukter();
+            } else {
+                return;
+            }
+            el.antalVist.focus();
+        });
+
+        // Kurven
+        el.kurvKnap.addEventListener('click', aabnKurv);
+        $('#hero-kurv').addEventListener('click', aabnKurv);
+        el.kurvLuk.addEventListener('click', function () { el.kurv.close(); });
+        $('#kurv-fortsaet').addEventListener('click', function () { el.kurv.close(); });
+
+        // Klik på den mørke baggrund uden for kurven lukker den
+        el.kurv.addEventListener('click', function (e) {
+            if (e.target === el.kurv) el.kurv.close();
+        });
+
+        el.kurvListe.addEventListener('click', function (e) {
+            const knap = e.target.closest('button');
+            if (!knap) return;
+            const d = knap.dataset;
+            let attribut;
+            let id;
+
+            if (d.plus) {
+                id = d.plus; attribut = 'data-plus';
+                kurv[id] += 1;
+            } else if (d.minus) {
+                id = d.minus; attribut = 'data-minus';
+                kurv[id] -= 1;
+                if (kurv[id] <= 0) delete kurv[id];
+            } else if (d.fjernVare) {
+                id = d.fjernVare; attribut = 'data-fjern-vare';
+                delete kurv[id];
+            } else {
+                return;
+            }
+
+            gemKurv();
+
+            // Listen tegnes forfra, så fokus sættes tilbage på den samme knap
+            const sammeKnap = el.kurvListe.querySelector('[' + attribut + '="' + id + '"]');
+            (sammeKnap || el.kurvLuk).focus();
+        });
+
+        // Tryk "/" for at hoppe til søgefeltet
+        document.addEventListener('keydown', function (e) {
+            const skriver = e.target.closest('input, select, textarea');
+            if (e.key === '/' && !skriver && !el.kurv.open) {
+                e.preventDefault();
+                el.soeg.focus();
+            }
+        });
+
+        // Til-top-knappen vises, når man har scrollet langt ned
+        window.addEventListener('scroll', function () {
+            el.tilTop.hidden = window.scrollY < 900;
+        }, { passive: true });
+
+        el.tilTop.addEventListener('click', function () {
+            window.scrollTo(0, 0);
+            el.soeg.focus({ preventScroll: true });
+        });
+
+        // ===== START =====
+        $('#tal-produkter').textContent = produkter.length;
+        $('#tal-maerker').textContent = maerker.length;
+        $('#tal-kategorier').textContent = new Set(produkter.map(function (p) { return p.kategori; })).size;
+        $('#aar').textContent = new Date().getFullYear();
+
+        // Nogle browsere husker det, man har skrevet/valgt, når siden genindlæses
+        tilstand.soegning = el.soeg.value;
+        tilstand.sortering = el.prisValg.value;
+        tilstand.kunFavoritter = el.kunFavoritter.checked;
+
+        el.favAntal.textContent = favoritter.size;
+        lavMaerkeKnapper();
+        visProdukter();
+        visKurv();
     </script>
 </body>
 </html>
