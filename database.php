@@ -4,7 +4,7 @@ $secrets = require __DIR__ . '/secrets.php';
 $db_host = "mysql111.unoeuro.com";
 $db_user = "onepieceisreal_dk";
 $db_pass = $secrets['db_pass'];
-$db_name = "onepieceisreal_dk";
+$db_name = "onepieceisreal_dk_db";
 $charset = "utf8mb4";
 
 $dsn = "mysql:host=$db_host;dbname=$db_name;charset=$charset";
