@@ -7,5 +7,7 @@
 </head>
 <body>
      <a href="forside-demo.html">Klik her for at gå til forside</a>
+     <a href="forside-fluent.html">Klik her for at gå til forside</a>
+
 </body>
 </html>
