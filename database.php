@@ -1,10 +1,10 @@
 <?php
 $secrets = require __DIR__ . '/secrets.php';
 
-$db_host = "mysqlXX.unoeuro.com"; 
-$db_user = "webshop_user";        
+$db_host = "mysql111.unoeuro.com";
+$db_user = "onepieceisreal_dk";
 $db_pass = $secrets['db_pass'];
-$db_name = "webshop";             
+$db_name = "onepieceisreal_dk";
 $charset = "utf8mb4";
 
 $dsn = "mysql:host=$db_host;dbname=$db_name;charset=$charset";
