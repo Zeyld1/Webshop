@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <!--
   Forside til gaming-webshoppen. Alt ligger i denne ene fil: HTML, CSS og JavaScript.
-  Priserne er demo-priser og skal rettes, før siden bruges rigtigt.
+  Priser, bedømmelser og lagertal er demo-data og skal rettes, før siden bruges rigtigt.
 
   Sådan tilføjer du et produkt: tilføj et nyt { ... } i listen "produkter" nederst i <script>.
-  Et nyt mærke kommer automatisk med i boksen til venstre, når et produkt har det mærke.
-  Kategori skal være "Mus", "Tastatur" eller "Headset", så det rigtige ikon vises.
+  - kategori skal være "Mus", "Tastatur" eller "Headset", så det rigtige ikon vises.
+  - foerPris er valgfri. Er den sat, vises produktet som tilbud med rabat i procent.
+  - maerkat er valgfri: fx 'Nyhed' eller 'Bestseller'.
+  Nye mærker og kategorier kommer automatisk med i filtrene.
 
-  Kurv, favoritter og valgt visning gemmes i browseren (localStorage),
-  så de stadig er der, når siden genindlæses.
+  Kurv, favoritter og valgt visning gemmes i browseren (localStorage).
 -->
 <html lang="da">
 <head>
@@ -21,38 +22,35 @@
             color-scheme: dark;
 
             /* 60-30-10: de tre farver, der bygger hele designet */
-            --baggrund: #0b0b0b;  /* 60 %: sidens baggrund og billedfelter */
-            --kort: #1a1a1a;      /* 30 %: topbjælke, boks, kort, kurv og bund */
-            --accent: #76b900;    /* 10 %: priser, valgte knapper og glød */
+            --baggrund: #0a0b0a;
+            --kort: #151715;
+            --accent: #76b900;
 
-            /* Tekst og kanter, som ikke tæller med i de tre farver */
-            --kant: #2e2e2e;
-            --kant-lys: #444444;
-            --tekst: #f2f2f2;
-            --daempet: #a3a3a3;
+            --kort-hoej: #1c1f1c;
+            --kant: #262a26;
+            --kant-lys: #3a3f3a;
+            --tekst: #f2f4f2;
+            --daempet: #9ea59e;
             --accent-hover: #8bd600;
-            --accent-tekst: #0b0b0b;
+            --accent-tekst: #0a0b0a;
+            --accent-svag: rgba(118, 185, 0, .12);
+            --advarsel: #f5a524;
 
-            /* Glød i accentfarven */
-            --gloed-svag: 0 0 24px rgba(118, 185, 0, .12);
-            --gloed-staerk: 0 0 10px rgba(118, 185, 0, .45), 0 0 32px rgba(118, 185, 0, .25);
+            --gloed-svag: 0 0 24px rgba(118, 185, 0, .10);
+            --gloed-staerk: 0 0 12px rgba(118, 185, 0, .40), 0 0 36px rgba(118, 185, 0, .20);
+            --skygge: 0 10px 30px rgba(0, 0, 0, .45);
 
-            --hjoerne: 2px;
+            --hjoerne: 14px;
+            --hjoerne-lille: 10px;
             --overskrift: Bahnschrift, "DIN Alternate", "Arial Narrow", Arial, sans-serif;
-            --header-hoejde: 66px;
+            --header-hoejde: 68px;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
-        [hidden] {
-            display: none !important;
-        }
+        [hidden] { display: none !important; }
 
-        html {
-            scroll-behavior: smooth;
-        }
+        html { scroll-behavior: smooth; }
 
         body {
             margin: 0;
@@ -62,23 +60,18 @@
             line-height: 1.5;
         }
 
-        h1, h2, h3, p {
-            margin: 0;
-        }
+        body.laast { overflow: hidden; }
 
-        button {
-            font: inherit;
-            color: inherit;
-        }
+        h1, h2, h3, p { margin: 0; }
 
-        svg {
-            flex-shrink: 0;
-        }
+        button, input, select { font: inherit; color: inherit; }
+
+        svg { flex-shrink: 0; }
 
         .indhold {
-            width: min(1280px, 100%);
+            width: min(1320px, 100%);
             margin-inline: auto;
-            padding-inline: 16px;
+            padding-inline: 20px;
         }
 
         /* Skjult på skærmen, men læses op af skærmlæsere */
@@ -114,14 +107,12 @@
             justify-content: center;
             gap: 8px;
             min-height: 48px;
-            padding: 10px 24px;
-            border-radius: var(--hjoerne);
+            padding: 10px 22px;
+            border-radius: 999px;
             font-weight: 700;
-            letter-spacing: .04em;
-            text-transform: uppercase;
             text-decoration: none;
             cursor: pointer;
-            transition: background-color .15s, border-color .15s, box-shadow .15s, color .15s;
+            transition: background-color .15s, border-color .15s, box-shadow .15s, color .15s, transform .15s;
         }
 
         .knap-primaer {
@@ -136,8 +127,10 @@
             box-shadow: var(--gloed-staerk);
         }
 
+        .knap-primaer:active { transform: scale(.97); }
+
         .knap-sekundaer {
-            background: transparent;
+            background: rgba(255, 255, 255, .03);
             border: 1px solid var(--kant-lys);
             color: var(--tekst);
         }
@@ -151,11 +144,10 @@
         .header {
             position: sticky;
             top: 0;
-            z-index: 10;
-            background: rgba(26, 26, 26, .92);
-            -webkit-backdrop-filter: blur(12px);
-            backdrop-filter: blur(12px);
-            border-top: 2px solid var(--accent);
+            z-index: 20;
+            background: rgba(10, 11, 10, .78);
+            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            backdrop-filter: blur(14px) saturate(140%);
             border-bottom: 1px solid var(--kant);
         }
 
@@ -164,11 +156,14 @@
             flex-wrap: wrap;
             align-items: center;
             gap: 12px 24px;
-            min-height: 64px;
+            min-height: var(--header-hoejde);
             padding-block: 10px;
         }
 
         .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
             color: var(--tekst);
             font-family: var(--overskrift);
             font-size: 1.15rem;
@@ -178,19 +173,28 @@
             text-transform: uppercase;
         }
 
-        .logo span {
-            color: var(--accent);
+        .logo-maerke {
+            display: grid;
+            place-items: center;
+            width: 34px;
+            height: 34px;
+            background: var(--accent);
+            border-radius: 9px;
+            color: var(--accent-tekst);
+            box-shadow: var(--gloed-staerk);
         }
+
+        .logo span:last-child { color: var(--accent); }
 
         .soeg {
             position: relative;
             flex: 1;
-            max-width: 520px;
+            max-width: 560px;
         }
 
         .soeg-ikon {
             position: absolute;
-            left: 12px;
+            left: 16px;
             top: 50%;
             translate: 0 -50%;
             color: var(--daempet);
@@ -199,56 +203,53 @@
 
         .soeg input {
             width: 100%;
-            min-height: 44px;
-            padding: 8px 40px 8px 42px;
-            background: var(--baggrund);
-            border: 1px solid var(--kant-lys);
-            border-radius: var(--hjoerne);
-            color: var(--tekst);
-            font: inherit;
+            min-height: 46px;
+            padding: 8px 44px 8px 46px;
+            background: var(--kort);
+            border: 1px solid var(--kant);
+            border-radius: 999px;
+            transition: border-color .15s, box-shadow .15s, background-color .15s;
         }
 
-        .soeg input::placeholder {
-            color: var(--daempet);
-        }
+        .soeg input::placeholder { color: var(--daempet); }
 
         .soeg input:focus {
+            background: var(--kort-hoej);
             border-color: var(--accent);
-            box-shadow: var(--gloed-svag);
+            box-shadow: 0 0 0 4px var(--accent-svag);
             outline: none;
         }
 
         .soeg-genvej {
             position: absolute;
-            right: 10px;
+            right: 14px;
             top: 50%;
             translate: 0 -50%;
             padding: 0 7px;
             border: 1px solid var(--kant-lys);
-            border-radius: var(--hjoerne);
+            border-radius: 6px;
             color: var(--daempet);
             font-family: inherit;
             font-size: .8rem;
         }
 
         .soeg input:focus ~ .soeg-genvej,
-        .soeg input:not(:placeholder-shown) ~ .soeg-genvej {
-            display: none;
-        }
+        .soeg input:not(:placeholder-shown) ~ .soeg-genvej { display: none; }
 
         .kurv-aabn {
             position: relative;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            min-height: 44px;
+            min-height: 46px;
             margin-left: auto;
-            padding: 8px 16px;
-            background: transparent;
-            border: 1px solid var(--kant-lys);
-            border-radius: var(--hjoerne);
+            padding: 8px 18px;
+            background: var(--kort);
+            border: 1px solid var(--kant);
+            border-radius: 999px;
             font-weight: 600;
             cursor: pointer;
+            transition: border-color .15s, color .15s;
         }
 
         .kurv-aabn:hover {
@@ -269,19 +270,14 @@
             box-shadow: var(--gloed-staerk);
         }
 
-        .kurv-antal.bump {
-            animation: bump .35s ease-out;
-        }
+        .kurv-antal.bump { animation: bump .35s ease-out; }
 
         @keyframes bump {
             40% { transform: scale(1.35); }
         }
 
-        /* På mobil kommer søgefeltet på sin egen linje */
         @media (max-width: 700px) {
-            :root {
-                --header-hoejde: 124px; /* højere, fordi søgefeltet har sin egen linje */
-            }
+            :root { --header-hoejde: 124px; }
 
             .soeg {
                 order: 3;
@@ -289,26 +285,36 @@
                 max-width: none;
             }
 
-            .soeg-genvej {
-                display: none;
-            }
+            .soeg-genvej { display: none; }
         }
 
         /* ===== HERO ===== */
         .hero {
             position: relative;
             overflow: hidden;
-            padding-block: 64px;
-            border-bottom: 1px solid var(--kant);
+            padding-block: 72px 56px;
             background:
-                radial-gradient(ellipse 50% 70% at 80% 50%, rgba(118, 185, 0, .16), transparent 70%),
-                linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px),
+                radial-gradient(ellipse 45% 70% at 85% 40%, rgba(118, 185, 0, .18), transparent 70%),
+                radial-gradient(ellipse 30% 50% at 10% 100%, rgba(118, 185, 0, .08), transparent 70%),
                 var(--baggrund);
-            background-size: auto, 48px 48px, 48px 48px, auto;
+        }
+
+        /* Fint gitter, der fader ud mod kanterne */
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, .04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 40%, #000 30%, transparent 80%);
+            mask-image: radial-gradient(ellipse 70% 80% at 50% 40%, #000 30%, transparent 80%);
+            pointer-events: none;
         }
 
         .hero .indhold {
+            position: relative;
             display: grid;
             gap: 48px;
             align-items: center;
@@ -317,33 +323,47 @@
         .hero-etiket {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            padding: 6px 14px;
+            background: var(--accent-svag);
+            border: 1px solid rgba(118, 185, 0, .35);
+            border-radius: 999px;
             color: var(--accent);
-            font-size: .85rem;
+            font-size: .8rem;
             font-weight: 700;
-            letter-spacing: .16em;
+            letter-spacing: .12em;
             text-transform: uppercase;
         }
 
         .hero-etiket::before {
             content: "";
-            width: 28px;
-            height: 2px;
+            width: 8px;
+            height: 8px;
             background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent);
+            animation: puls 2s ease-in-out infinite;
+        }
+
+        @keyframes puls {
+            50% { opacity: .35; }
         }
 
         .hero h1 {
-            margin-top: 16px;
+            margin-top: 20px;
             font-family: var(--overskrift);
-            font-size: clamp(2.6rem, 6.5vw, 4.75rem);
+            font-size: clamp(2.6rem, 6.5vw, 5rem);
             font-weight: 700;
-            line-height: 1;
+            line-height: .98;
             text-transform: uppercase;
         }
 
         .hero h1 span {
-            color: var(--accent);
-            text-shadow: 0 0 24px rgba(118, 185, 0, .45);
+            background: linear-gradient(90deg, var(--accent), #c6ff4d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 0 18px rgba(118, 185, 0, .35));
         }
 
         .hero-tekst {
@@ -363,10 +383,9 @@
         .hero-tal {
             display: flex;
             flex-wrap: wrap;
-            gap: 32px;
+            gap: 36px;
             margin: 40px 0 0;
-            padding: 24px 0 0;
-            border-top: 1px solid var(--kant);
+            padding: 0;
             list-style: none;
         }
 
@@ -382,15 +401,10 @@
             font-size: .9rem;
         }
 
-        /* Pynt i højre side: tre felter med produktikoner */
-        .hero-visual {
-            display: none;
-        }
+        .hero-visual { display: none; }
 
         @media (min-width: 960px) {
-            .hero .indhold {
-                grid-template-columns: 1.2fr 1fr;
-            }
+            .hero .indhold { grid-template-columns: 1.15fr 1fr; }
 
             .hero-visual {
                 display: grid;
@@ -399,24 +413,31 @@
             }
         }
 
+        /* Felterne i højre side er knapper, der vælger en kategori */
         .hero-felt {
+            position: relative;
             display: grid;
             place-items: center;
-            gap: 8px;
-            min-height: 150px;
+            gap: 10px;
+            min-height: 160px;
             padding: 20px;
-            background: rgba(26, 26, 26, .85);
+            background: linear-gradient(160deg, rgba(28, 31, 28, .9), rgba(14, 16, 14, .9));
             border: 1px solid var(--kant);
             border-radius: var(--hjoerne);
-            box-shadow: var(--gloed-svag);
             color: var(--accent);
+            cursor: pointer;
+            transition: transform .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .hero-felt:hover {
+            transform: translateY(-4px);
+            border-color: rgba(118, 185, 0, .6);
+            box-shadow: var(--gloed-staerk);
         }
 
         .hero-felt:first-child {
             grid-column: 1 / -1;
-            min-height: 190px;
-            border-color: rgba(118, 185, 0, .5);
-            box-shadow: var(--gloed-staerk);
+            min-height: 200px;
         }
 
         .hero-felt svg {
@@ -427,7 +448,10 @@
             stroke-width: 1.5;
             stroke-linecap: round;
             stroke-linejoin: round;
+            transition: transform .3s;
         }
+
+        .hero-felt:hover svg { transform: scale(1.08) rotate(-3deg); }
 
         .hero-felt:first-child svg {
             width: 110px;
@@ -435,18 +459,64 @@
         }
 
         .hero-felt span {
-            color: var(--daempet);
-            font-size: .8rem;
+            color: var(--tekst);
+            font-size: .85rem;
             font-weight: 600;
-            letter-spacing: .14em;
+            letter-spacing: .12em;
             text-transform: uppercase;
         }
 
-        /* ===== LAYOUT: BOKS TIL VENSTRE, PRODUKTER TIL HØJRE ===== */
+        .hero-felt small {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            color: var(--daempet);
+            font-size: .8rem;
+        }
+
+        /* Fordele under hero */
+        .fordele {
+            border-block: 1px solid var(--kant);
+            background: var(--kort);
+        }
+
+        .fordele ul {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 8px 24px;
+            margin: 0;
+            padding-block: 18px;
+            list-style: none;
+        }
+
+        .fordele li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--daempet);
+            font-size: .95rem;
+        }
+
+        .fordele strong {
+            display: block;
+            color: var(--tekst);
+            font-weight: 600;
+        }
+
+        .fordele .ikon {
+            width: 36px;
+            height: 36px;
+            padding: 8px;
+            background: var(--accent-svag);
+            border-radius: 10px;
+            color: var(--accent);
+        }
+
+        /* ===== LAYOUT ===== */
         .layout {
             display: grid;
-            gap: 24px;
-            padding-block: 32px 72px;
+            gap: 28px;
+            padding-block: 40px 80px;
         }
 
         main {
@@ -454,62 +524,175 @@
             scroll-margin-top: calc(var(--header-hoejde) + 16px);
         }
 
-        /* ===== BOKS MED FILTRE ===== */
+        /* ===== FILTERBOKS ===== */
         .boks {
+            display: flex;
+            flex-direction: column;
             background: var(--kort);
             border: 1px solid var(--kant);
             border-radius: var(--hjoerne);
-            box-shadow: var(--gloed-svag);
         }
 
-        .boks-del {
-            padding: 20px;
-        }
-
-        .boks-del + .boks-del {
-            border-top: 1px solid var(--kant);
-        }
-
-        .boks-titel {
-            display: block;
-            margin-bottom: 12px;
-            color: var(--daempet);
-            font-size: .8rem;
-            font-weight: 700;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-        }
-
-        .maerke-liste {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .maerke-knap {
+        .boks-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            min-height: 44px;
-            padding: 8px 12px;
-            background: var(--baggrund);
-            border: 1px solid var(--kant);
-            border-radius: var(--hjoerne);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--kant);
+        }
+
+        .boks-top h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--overskrift);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+
+        .boks-top h2 .ikon { color: var(--accent); }
+
+        .link-knap {
+            min-height: 36px;
+            padding: 0 4px;
+            background: none;
+            border: 0;
+            color: var(--accent);
+            font-size: .9rem;
             font-weight: 600;
-            text-align: left;
             cursor: pointer;
-            transition: border-color .15s, box-shadow .15s;
         }
 
-        .maerke-knap:hover {
+        .link-knap:hover { text-decoration: underline; }
+
+        .link-knap:disabled {
+            color: var(--daempet);
+            opacity: .5;
+            cursor: default;
+            text-decoration: none;
+        }
+
+        .boks-krop {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Hver filtergruppe kan foldes sammen (details/summary) */
+        .gruppe + .gruppe { border-top: 1px solid var(--kant); }
+
+        .gruppe summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            color: var(--tekst);
+            font-size: .8rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            list-style: none;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .gruppe summary::-webkit-details-marker { display: none; }
+
+        .gruppe summary::after {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid var(--daempet);
+            border-bottom: 2px solid var(--daempet);
+            transform: rotate(45deg) translateY(-3px);
+            transition: transform .2s;
+        }
+
+        .gruppe[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
+
+        .gruppe-indhold {
+            display: grid;
+            gap: 4px;
+            padding: 0 20px 20px;
+        }
+
+        /* Afkrydsningsfelter og radioknapper */
+        .valg {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 40px;
+            padding: 6px 10px;
+            margin-inline: -10px;
+            border-radius: var(--hjoerne-lille);
+            cursor: pointer;
+            transition: background-color .15s;
+        }
+
+        .valg:hover { background: rgba(255, 255, 255, .04); }
+
+        .valg input {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+        }
+
+        .boks-tegn {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 20px;
+            height: 20px;
+            background: var(--baggrund);
+            border: 1.5px solid var(--kant-lys);
+            border-radius: 6px;
+            transition: background-color .15s, border-color .15s;
+        }
+
+        .valg input[type="radio"] + .boks-tegn { border-radius: 50%; }
+
+        .boks-tegn::after {
+            content: "";
+            opacity: 0;
+            transition: opacity .15s;
+        }
+
+        .valg input[type="checkbox"] + .boks-tegn::after {
+            width: 5px;
+            height: 10px;
+            margin-top: -2px;
+            border-right: 2.5px solid var(--accent-tekst);
+            border-bottom: 2.5px solid var(--accent-tekst);
+            transform: rotate(45deg);
+        }
+
+        .valg input[type="radio"] + .boks-tegn::after {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-tekst);
+            border-radius: 50%;
+        }
+
+        .valg input:checked + .boks-tegn {
+            background: var(--accent);
             border-color: var(--accent);
+            box-shadow: var(--gloed-svag);
         }
 
-        .maerke-antal {
-            min-width: 26px;
-            padding: 0 6px;
-            background: var(--kort);
+        .valg input:checked + .boks-tegn::after { opacity: 1; }
+
+        .valg input:focus-visible + .boks-tegn {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .valg-navn { flex: 1; }
+
+        .valg-antal {
+            min-width: 28px;
+            padding: 0 7px;
+            background: var(--baggrund);
             border-radius: 999px;
             color: var(--daempet);
             font-size: .8rem;
@@ -517,37 +700,105 @@
             text-align: center;
         }
 
-        .maerke-knap[aria-pressed="true"] {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: var(--accent-tekst);
-            box-shadow: var(--gloed-staerk);
-        }
+        .valg.tom-valg { opacity: .4; }
 
-        .maerke-knap[aria-pressed="true"] .maerke-antal {
-            background: rgba(0, 0, 0, .2);
-            color: var(--accent-tekst);
-        }
-
-        .pris-valg {
-            width: 100%;
-            min-height: 44px;
-            padding: 8px 10px;
-            background: var(--baggrund);
-            border: 1px solid var(--kant);
-            border-radius: var(--hjoerne);
-            color: var(--tekst);
-            font: inherit;
-            cursor: pointer;
-        }
-
-        /* Kontakt (tænd/sluk) til favoritter */
-        .kontakt {
-            position: relative;
+        /* Prisinterval med to skydere oven på hinanden */
+        .pris-tal {
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .pris-tal output {
+            padding: 6px 12px;
+            background: var(--baggrund);
+            border: 1px solid var(--kant);
+            border-radius: var(--hjoerne-lille);
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+
+        .pris-tal span { color: var(--daempet); }
+
+        .pris-slider {
+            position: relative;
+            height: 32px;
+        }
+
+        .pris-spor {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            translate: 0 -50%;
+            background: var(--kant-lys);
+            border-radius: 999px;
+        }
+
+        .pris-fyld {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: var(--fra, 0%);
+            right: var(--til, 0%);
+            background: var(--accent);
+            border-radius: 999px;
+            box-shadow: var(--gloed-svag);
+        }
+
+        .pris-slider input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 32px;
+            margin: 0;
+            background: none;
+            -webkit-appearance: none;
+            appearance: none;
+            pointer-events: none;
+        }
+
+        .pris-slider input::-webkit-slider-runnable-track { background: none; }
+        .pris-slider input::-moz-range-track { background: none; }
+
+        .pris-slider input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: var(--accent);
+            border: 4px solid var(--kort);
+            border-radius: 50%;
+            box-shadow: 0 0 0 1px var(--accent), var(--gloed-svag);
+            cursor: grab;
+            pointer-events: auto;
+        }
+
+        .pris-slider input::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: var(--accent);
+            border: 4px solid var(--kort);
+            border-radius: 50%;
+            box-shadow: 0 0 0 1px var(--accent);
+            cursor: grab;
+            pointer-events: auto;
+        }
+
+        .pris-slider input:focus-visible { outline: none; }
+
+        .pris-slider input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1px var(--accent), 0 0 0 6px var(--accent-svag); }
+        .pris-slider input:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 1px var(--accent), 0 0 0 6px var(--accent-svag); }
+
+        /* Kontakt (tænd/sluk) */
+        .kontakt {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 12px;
-            min-height: 44px;
+            min-height: 40px;
             cursor: pointer;
         }
 
@@ -560,7 +811,7 @@
 
         .kontakt-spor {
             position: relative;
-            width: 44px;
+            width: 42px;
             height: 24px;
             background: var(--baggrund);
             border: 1px solid var(--kant-lys);
@@ -577,7 +828,7 @@
             height: 16px;
             background: var(--daempet);
             border-radius: 50%;
-            transition: transform .15s, background-color .15s;
+            transition: transform .2s, background-color .15s;
         }
 
         .kontakt input:checked + .kontakt-spor {
@@ -588,7 +839,7 @@
 
         .kontakt input:checked + .kontakt-spor::after {
             background: var(--accent-tekst);
-            transform: translateX(20px);
+            transform: translateX(18px);
         }
 
         .kontakt input:focus-visible + .kontakt-spor {
@@ -596,10 +847,32 @@
             outline-offset: 2px;
         }
 
-        /* På store skærme står boksen til venstre og følger med ned ad siden */
-        @media (min-width: 860px) {
+        .kontakt small { color: var(--daempet); }
+
+        .boks-bund {
+            padding: 16px 20px;
+            border-top: 1px solid var(--kant);
+        }
+
+        .boks-bund .knap-primaer { width: 100%; }
+
+        .boks-luk,
+        .boks-bund,
+        .filter-aabn { display: none; }
+
+        .sloer {
+            position: fixed;
+            inset: 0;
+            z-index: 29;
+            background: rgba(0, 0, 0, .6);
+            -webkit-backdrop-filter: blur(3px);
+            backdrop-filter: blur(3px);
+        }
+
+        /* Store skærme: boksen står til venstre og følger med ned ad siden */
+        @media (min-width: 900px) {
             .layout {
-                grid-template-columns: 260px minmax(0, 1fr);
+                grid-template-columns: 280px minmax(0, 1fr);
                 align-items: start;
             }
 
@@ -607,56 +880,219 @@
                 position: sticky;
                 top: calc(var(--header-hoejde) + 16px);
                 max-height: calc(100vh - var(--header-hoejde) - 32px);
-                overflow-y: auto;
             }
 
-            .maerke-liste {
-                flex-direction: column;
-            }
+            .sloer { display: none; }
         }
 
-        /* ===== VÆRKTØJSLINJE OVER PRODUKTERNE ===== */
+        /* Små skærme: boksen glider ind fra venstre */
+        @media (max-width: 899px) {
+            .boks {
+                position: fixed;
+                inset: 0 auto 0 0;
+                z-index: 30;
+                width: min(380px, 92%);
+                border-radius: 0 var(--hjoerne) var(--hjoerne) 0;
+                box-shadow: 8px 0 40px rgba(0, 0, 0, .6);
+                transform: translateX(-105%);
+                transition: transform .28s cubic-bezier(.2, .8, .2, 1), visibility 0s .28s;
+                visibility: hidden;
+            }
+
+            .boks.aaben {
+                transform: none;
+                visibility: visible;
+                transition-delay: 0s;
+            }
+
+            .boks-luk,
+            .filter-aabn { display: inline-flex; }
+
+            .boks-bund { display: block; }
+        }
+
+        .boks-luk {
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: 1px solid var(--kant);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .boks-top-hoejre {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ===== KATEGORI-FANER ===== */
+        .faner {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding-bottom: 4px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .faner::-webkit-scrollbar { display: none; }
+
+        .fane {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 44px;
+            padding: 6px 8px 6px 16px;
+            background: var(--kort);
+            border: 1px solid var(--kant);
+            border-radius: 999px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s;
+        }
+
+        .fane .ikon { width: 18px; height: 18px; }
+
+        .fane:hover { border-color: var(--kant-lys); }
+
+        .fane-antal {
+            min-width: 26px;
+            padding: 0 7px;
+            background: var(--baggrund);
+            border-radius: 999px;
+            color: var(--daempet);
+            font-size: .8rem;
+            line-height: 24px;
+            text-align: center;
+        }
+
+        .fane[aria-pressed="true"] {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-tekst);
+            box-shadow: var(--gloed-staerk);
+        }
+
+        .fane[aria-pressed="true"] .fane-antal {
+            background: rgba(0, 0, 0, .2);
+            color: var(--accent-tekst);
+        }
+
+        /* ===== VÆRKTØJSLINJE ===== */
         .vaerktoej {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--kant);
         }
 
-        .antal-vist {
+        .antal-vist { color: var(--daempet); }
+
+        .antal-vist strong { color: var(--tekst); }
+
+        .antal-vist:focus { outline: none; }
+
+        .vaerktoej-hoejre {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-aabn {
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 8px 16px;
+            background: var(--kort);
+            border: 1px solid var(--kant);
+            border-radius: 999px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .filter-aabn .kurv-antal { box-shadow: none; }
+
+        .sortering {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .sortering .ikon {
+            position: absolute;
+            left: 14px;
+            width: 18px;
+            height: 18px;
             color: var(--daempet);
+            pointer-events: none;
         }
 
-        .antal-vist:focus {
-            outline: none;
+        .sortering select {
+            min-height: 44px;
+            padding: 8px 40px 8px 40px;
+            background:
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%239ea59e' stroke-width='2'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 16px center,
+                var(--kort);
+            border: 1px solid var(--kant);
+            border-radius: 999px;
+            font-weight: 600;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .sortering select:hover,
+        .sortering select:focus { border-color: var(--accent); }
+
+        .sortering select option { background: var(--kort); }
+
+        /* Smal skærm: filter, sortering og visning på én linje */
+        @media (max-width: 560px) {
+            .vaerktoej-hoejre {
+                flex-wrap: nowrap;
+                width: 100%;
+            }
+
+            .sortering { flex: 1; min-width: 0; }
+
+            .sortering select {
+                width: 100%;
+                padding-right: 32px;
+                text-overflow: ellipsis;
+            }
         }
 
         .visning {
             display: flex;
-            gap: 4px;
+            padding: 3px;
+            background: var(--kort);
+            border: 1px solid var(--kant);
+            border-radius: 999px;
         }
 
         .visning-knap {
             display: grid;
             place-items: center;
-            width: 44px;
-            height: 44px;
+            width: 38px;
+            height: 36px;
             background: transparent;
-            border: 1px solid var(--kant);
-            border-radius: var(--hjoerne);
+            border: 0;
+            border-radius: 999px;
             color: var(--daempet);
             cursor: pointer;
+            transition: background-color .15s, color .15s;
         }
 
-        .visning-knap:hover {
-            color: var(--tekst);
-        }
+        .visning-knap:hover { color: var(--tekst); }
 
         .visning-knap[aria-pressed="true"] {
-            border-color: var(--accent);
+            background: var(--kort-hoej);
             color: var(--accent);
         }
 
@@ -664,127 +1100,133 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            padding-top: 12px;
+            padding-top: 16px;
         }
 
-        .aktive-filtre:empty {
-            display: none;
-        }
+        .aktive-filtre:empty { display: none; }
 
         .chip {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            min-height: 36px;
-            padding: 4px 8px 4px 12px;
-            background: var(--kort);
-            border: 1px solid var(--kant-lys);
-            border-radius: var(--hjoerne);
+            min-height: 34px;
+            padding: 4px 8px 4px 14px;
+            background: var(--accent-svag);
+            border: 1px solid rgba(118, 185, 0, .35);
+            border-radius: 999px;
+            color: var(--tekst);
             font-size: .9rem;
             cursor: pointer;
+            animation: ind .2s ease-out;
         }
 
-        .chip:hover {
-            border-color: var(--accent);
-        }
+        .chip:hover { border-color: var(--accent); }
 
         .chip .ikon {
             width: 16px;
             height: 16px;
+            color: var(--accent);
         }
 
         .chip-nulstil {
-            min-height: 36px;
+            min-height: 34px;
             padding: 4px 8px;
             background: none;
             border: 0;
-            color: var(--accent);
+            color: var(--daempet);
             font-size: .9rem;
             font-weight: 600;
             text-decoration: underline;
             cursor: pointer;
         }
 
-        /* ===== MÆRKER & PRODUKTER ===== */
-        .maerke-sektion {
-            padding-top: 32px;
-        }
+        .chip-nulstil:hover { color: var(--tekst); }
 
-        .maerke-top {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .maerke-top h2 {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-family: var(--overskrift);
-            font-size: clamp(1.6rem, 4vw, 2.1rem);
-            text-transform: uppercase;
-        }
-
-        .maerke-top h2::before {
-            content: "";
-            width: 4px;
-            height: .9em;
-            background: var(--accent);
-            box-shadow: var(--gloed-staerk);
-        }
-
-        .antal {
-            color: var(--daempet);
-            white-space: nowrap;
-        }
-
+        /* ===== PRODUKTKORT ===== */
         .produkter {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
             gap: 20px;
+            padding-top: 24px;
+        }
+
+        @keyframes ind {
+            from { opacity: 0; transform: translateY(8px); }
         }
 
         .produkt {
+            position: relative;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             background: var(--kort);
             border: 1px solid var(--kant);
             border-radius: var(--hjoerne);
-            box-shadow: var(--gloed-svag);
-            transition: transform .15s, border-color .15s, box-shadow .15s;
+            transition: transform .2s, border-color .2s, box-shadow .2s;
+            animation: ind .35s ease-out backwards;
+            animation-delay: calc(var(--i, 0) * 35ms);
         }
 
         .produkt:hover {
-            transform: translateY(-3px);
-            border-color: var(--accent);
-            box-shadow: var(--gloed-staerk);
+            transform: translateY(-4px);
+            border-color: rgba(118, 185, 0, .55);
+            box-shadow: var(--skygge), var(--gloed-svag);
         }
 
         .produkt-billede {
             position: relative;
             display: grid;
             place-items: center;
-            height: 160px;
-            background: radial-gradient(circle at 50% 130%, rgba(118, 185, 0, .2), transparent 60%), var(--baggrund);
+            aspect-ratio: 4 / 3;
+            margin: 8px 8px 0;
+            background:
+                radial-gradient(circle at 50% 120%, rgba(118, 185, 0, .22), transparent 60%),
+                linear-gradient(180deg, #121412, #0c0d0c);
+            border-radius: var(--hjoerne-lille);
             color: var(--daempet);
         }
 
         .produkt-billede > svg {
-            width: 76px;
-            height: 76px;
+            width: 84px;
+            height: 84px;
             fill: none;
             stroke: currentColor;
-            stroke-width: 1.5;
+            stroke-width: 1.4;
             stroke-linecap: round;
             stroke-linejoin: round;
-            transition: color .15s;
+            transition: color .2s, transform .3s;
         }
 
         .produkt:hover .produkt-billede > svg {
             color: var(--accent);
+            transform: scale(1.08);
+        }
+
+        .maerkater {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .maerkat {
+            padding: 3px 10px;
+            background: var(--kort-hoej);
+            border: 1px solid var(--kant-lys);
+            border-radius: 999px;
+            color: var(--tekst);
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .maerkat.rabat {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-tekst);
         }
 
         .favorit {
@@ -793,147 +1235,238 @@
             right: 8px;
             display: grid;
             place-items: center;
-            width: 44px;
-            height: 44px;
-            background: rgba(11, 11, 11, .75);
+            width: 40px;
+            height: 40px;
+            background: rgba(10, 11, 10, .7);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
             border: 1px solid var(--kant);
-            border-radius: var(--hjoerne);
+            border-radius: 50%;
             color: var(--daempet);
             cursor: pointer;
+            transition: color .15s, border-color .15s, transform .15s;
         }
 
-        .favorit:hover {
-            color: var(--tekst);
-        }
+        .favorit:hover { color: var(--tekst); transform: scale(1.08); }
 
         .favorit[aria-pressed="true"] {
             border-color: var(--accent);
             color: var(--accent);
         }
 
-        .favorit[aria-pressed="true"] .ikon {
-            fill: currentColor;
-        }
+        .favorit[aria-pressed="true"] .ikon { fill: currentColor; }
+
+        .favorit.pop { animation: bump .35s ease-out; }
 
         .produkt-tekst {
+            display: flex;
             flex: 1;
-            padding: 16px;
+            flex-direction: column;
+            gap: 6px;
+            padding: 14px 16px 8px;
         }
 
-        .kategori {
-            color: var(--accent);
+        .produkt-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: .75rem;
             font-weight: 700;
-            letter-spacing: .14em;
+            letter-spacing: .12em;
             text-transform: uppercase;
         }
 
+        .produkt-meta .kategori { color: var(--accent); }
+        .produkt-meta .maerke-navn { color: var(--daempet); }
+        .produkt-meta .maerke-navn::before { content: "·"; margin-right: 8px; }
+
         .produkt h3 {
-            margin-top: 4px;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             line-height: 1.3;
         }
 
-        .beskrivelse {
-            margin-top: 8px;
+        /* Stjerner: fyldt med accent op til bedømmelsen (--v fra 0 til 5) */
+        .bedoemmelse {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             color: var(--daempet);
-            font-size: .95rem;
+            font-size: .85rem;
         }
 
-        /* Prisen og kurv-knappen i en grøn bjælke i bunden af kortet */
-        .pris-bjaelke {
+        .stjerner {
+            --pct: calc(var(--v) / 5 * 100%);
+            background: linear-gradient(90deg, var(--accent) var(--pct), var(--kant-lys) var(--pct));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: .95rem;
+            letter-spacing: 2px;
+        }
+
+        .bedoemmelse strong { color: var(--tekst); }
+
+        .beskrivelse {
+            color: var(--daempet);
+            font-size: .9rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .lager {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 4px;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+
+        .lager::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .lager.ok { color: var(--accent); }
+        .lager.faa { color: var(--advarsel); }
+        .lager.udsolgt { color: var(--daempet); }
+        .lager.udsolgt::before { box-shadow: none; }
+
+        .produkt-bund {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            padding: 10px 10px 10px 16px;
-            background: var(--accent);
-            color: var(--accent-tekst);
+            padding: 12px 16px 16px;
+        }
+
+        .priser {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
         }
 
         .pris {
+            color: var(--tekst);
             font-family: var(--overskrift);
-            font-size: 1.4rem;
+            font-size: 1.45rem;
             font-weight: 700;
             white-space: nowrap;
+        }
+
+        .er-tilbud .pris { color: var(--accent); }
+
+        .foer-pris {
+            color: var(--daempet);
+            font-size: .85rem;
         }
 
         .kurv-knap {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             min-height: 44px;
-            padding: 8px 14px;
-            background: var(--baggrund);
+            padding: 8px 16px;
+            background: var(--accent);
             border: 0;
-            border-radius: var(--hjoerne);
-            color: var(--tekst);
-            font-weight: 600;
+            border-radius: 999px;
+            color: var(--accent-tekst);
+            font-weight: 700;
             white-space: nowrap;
             cursor: pointer;
-            transition: color .15s;
+            transition: background-color .15s, box-shadow .15s, transform .15s;
         }
 
         .kurv-knap:hover {
-            color: var(--accent);
+            background: var(--accent-hover);
+            box-shadow: var(--gloed-staerk);
         }
 
-        .pris-bjaelke :focus-visible {
-            outline-color: var(--accent-tekst);
+        .kurv-knap:active { transform: scale(.95); }
+
+        .kurv-knap:disabled {
+            background: var(--kort-hoej);
+            color: var(--daempet);
+            box-shadow: none;
+            cursor: not-allowed;
         }
+
+        .kurv-knap.tilfoejet { animation: bump .35s ease-out; }
 
         /* Listevisning: billede, tekst og pris på én række */
-        .liste-visning .produkter {
-            grid-template-columns: 1fr;
-        }
+        .liste-visning .produkter { grid-template-columns: 1fr; }
 
         .liste-visning .produkt {
             display: grid;
-            grid-template-columns: 180px minmax(0, 1fr) 210px;
+            grid-template-columns: 200px minmax(0, 1fr) 200px;
+            align-items: stretch;
         }
 
         .liste-visning .produkt-billede {
-            height: auto;
-            min-height: 140px;
+            aspect-ratio: auto;
+            min-height: 150px;
+            margin: 8px 0 8px 8px;
         }
 
-        .liste-visning .pris-bjaelke {
+        .liste-visning .beskrivelse { -webkit-line-clamp: 3; line-clamp: 3; }
+
+        .liste-visning .produkt-bund {
             flex-direction: column;
             align-items: stretch;
             justify-content: center;
-            padding: 16px;
+            border-left: 1px solid var(--kant);
         }
 
-        @media (max-width: 640px) {
-            .liste-visning .produkt {
-                grid-template-columns: 96px minmax(0, 1fr);
-            }
+        .liste-visning .priser { align-items: flex-start; }
 
-            .liste-visning .produkt-billede > svg {
-                width: 44px;
-                height: 44px;
-            }
+        @media (max-width: 680px) {
+            .liste-visning .produkt { grid-template-columns: 110px minmax(0, 1fr); }
 
-            .liste-visning .favorit {
-                top: 4px;
-                right: 4px;
-            }
+            .liste-visning .produkt-billede { min-height: 110px; }
 
-            .liste-visning .pris-bjaelke {
+            .liste-visning .produkt-billede > svg { width: 48px; height: 48px; }
+
+            .liste-visning .maerkater { display: none; }
+
+            .liste-visning .favorit { width: 34px; height: 34px; top: 4px; right: 4px; }
+
+            .liste-visning .produkt-bund {
                 grid-column: 1 / -1;
                 flex-direction: row;
                 align-items: center;
-                padding: 10px 10px 10px 16px;
+                border-left: 0;
+                border-top: 1px solid var(--kant);
+                padding-top: 12px;
             }
         }
 
         /* Når ingen produkter passer til filtrene */
         .tom {
-            margin-top: 32px;
-            padding: 48px 16px;
+            display: grid;
+            justify-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            padding: 56px 16px;
+            background: var(--kort);
             border: 1px dashed var(--kant-lys);
             border-radius: var(--hjoerne);
             text-align: center;
+        }
+
+        .tom .ikon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 8px;
+            color: var(--daempet);
         }
 
         .tom h2 {
@@ -943,13 +1476,14 @@
         }
 
         .tom p {
-            margin: 8px 0 24px;
+            max-width: 44ch;
+            margin-bottom: 16px;
             color: var(--daempet);
         }
 
         /* ===== KURV (åbner fra højre side) ===== */
         .kurv {
-            width: min(420px, 100%);
+            width: min(440px, 100%);
             max-width: 100%;
             height: 100%;
             max-height: 100%;
@@ -962,16 +1496,14 @@
             box-shadow: -8px 0 40px rgba(0, 0, 0, .6);
         }
 
-        .kurv[open] {
-            animation: kurv-ind .25s ease-out;
-        }
+        .kurv[open] { animation: kurv-ind .28s cubic-bezier(.2, .8, .2, 1); }
 
         @keyframes kurv-ind {
             from { transform: translateX(100%); }
         }
 
         .kurv::backdrop {
-            background: rgba(0, 0, 0, .65);
+            background: rgba(0, 0, 0, .6);
             -webkit-backdrop-filter: blur(3px);
             backdrop-filter: blur(3px);
         }
@@ -999,17 +1531,45 @@
         .luk {
             display: grid;
             place-items: center;
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: transparent;
             border: 1px solid var(--kant);
-            border-radius: var(--hjoerne);
+            border-radius: 50%;
             cursor: pointer;
         }
 
-        .luk:hover {
+        .luk:hover,
+        .boks-luk:hover {
             border-color: var(--accent);
             color: var(--accent);
+        }
+
+        /* Bjælke, der viser hvor langt der er til fri fragt */
+        .fragt {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--kant);
+            font-size: .9rem;
+        }
+
+        .fragt strong { color: var(--accent); }
+
+        .fragt-bar {
+            height: 6px;
+            margin-top: 8px;
+            overflow: hidden;
+            background: var(--baggrund);
+            border-radius: 999px;
+        }
+
+        .fragt-bar span {
+            display: block;
+            height: 100%;
+            width: var(--pct, 0%);
+            background: linear-gradient(90deg, var(--accent), #c6ff4d);
+            border-radius: inherit;
+            box-shadow: var(--gloed-svag);
+            transition: width .3s;
         }
 
         .kurv-liste {
@@ -1025,15 +1585,23 @@
         }
 
         .kurv-tom {
-            padding-block: 48px;
+            display: grid;
+            justify-items: center;
+            gap: 12px;
+            padding-block: 56px;
             color: var(--daempet);
             text-align: center;
         }
 
+        .kurv-tom .ikon {
+            width: 44px;
+            height: 44px;
+        }
+
         .vare {
             display: grid;
-            grid-template-columns: 56px minmax(0, 1fr) auto;
-            gap: 12px;
+            grid-template-columns: 60px minmax(0, 1fr) auto;
+            gap: 14px;
             padding-block: 16px;
             border-bottom: 1px solid var(--kant);
         }
@@ -1041,16 +1609,16 @@
         .vare-ikon {
             display: grid;
             place-items: center;
-            width: 56px;
-            height: 56px;
+            width: 60px;
+            height: 60px;
             background: var(--baggrund);
-            border-radius: var(--hjoerne);
+            border-radius: var(--hjoerne-lille);
             color: var(--accent);
         }
 
         .vare-ikon svg {
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             fill: none;
             stroke: currentColor;
             stroke-width: 1.5;
@@ -1072,25 +1640,25 @@
             display: inline-flex;
             align-items: center;
             margin-top: 8px;
-            border: 1px solid var(--kant-lys);
-            border-radius: var(--hjoerne);
+            background: var(--baggrund);
+            border: 1px solid var(--kant);
+            border-radius: 999px;
         }
 
         .antal-styring button {
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             background: transparent;
             border: 0;
+            border-radius: 50%;
             font-size: 1.1rem;
             cursor: pointer;
         }
 
-        .antal-styring button:hover {
-            color: var(--accent);
-        }
+        .antal-styring button:hover { color: var(--accent); }
 
         .antal-styring span {
-            min-width: 28px;
+            min-width: 26px;
             text-align: center;
             font-weight: 600;
         }
@@ -1110,7 +1678,7 @@
         }
 
         .vare-fjern {
-            min-height: 36px;
+            min-height: 34px;
             padding: 0;
             background: none;
             border: 0;
@@ -1120,28 +1688,33 @@
             cursor: pointer;
         }
 
-        .vare-fjern:hover {
-            color: var(--tekst);
-        }
+        .vare-fjern:hover { color: var(--tekst); }
 
         .kurv-bund {
             display: grid;
-            gap: 12px;
+            gap: 10px;
             padding: 20px;
             border-top: 1px solid var(--kant);
+        }
+
+        .kurv-linje {
+            display: flex;
+            justify-content: space-between;
+            color: var(--daempet);
         }
 
         .kurv-total {
             display: flex;
             align-items: baseline;
             justify-content: space-between;
+            margin-bottom: 6px;
             font-size: 1.05rem;
         }
 
         .kurv-total strong {
             color: var(--accent);
             font-family: var(--overskrift);
-            font-size: 1.75rem;
+            font-size: 1.8rem;
         }
 
         /* ===== BESKED, TIL-TOP OG BUND ===== */
@@ -1149,19 +1722,31 @@
             position: fixed;
             left: 50%;
             bottom: 24px;
-            z-index: 20;
+            z-index: 40;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             max-width: calc(100% - 32px);
             padding: 12px 18px;
-            background: var(--kort);
-            border: 1px solid var(--kant);
-            border-left: 3px solid var(--accent);
-            border-radius: var(--hjoerne);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, .6), var(--gloed-svag);
+            background: var(--kort-hoej);
+            border: 1px solid var(--kant-lys);
+            border-radius: 999px;
+            box-shadow: var(--skygge), var(--gloed-svag);
             font-weight: 600;
             opacity: 0;
             transform: translate(-50%, 16px);
             transition: opacity .2s, transform .2s;
             pointer-events: none;
+        }
+
+        .toast::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            flex-shrink: 0;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent);
         }
 
         .toast.vis {
@@ -1180,7 +1765,7 @@
             height: 48px;
             background: var(--kort);
             border: 1px solid var(--kant-lys);
-            border-radius: var(--hjoerne);
+            border-radius: 50%;
             cursor: pointer;
         }
 
@@ -1207,9 +1792,7 @@
 
         /* Ingen bevægelse for dem, der har slået animationer fra */
         @media (prefers-reduced-motion: reduce) {
-            html {
-                scroll-behavior: auto;
-            }
+            html { scroll-behavior: auto; }
 
             *,
             *::before,
@@ -1218,9 +1801,8 @@
                 animation: none !important;
             }
 
-            .produkt:hover {
-                transform: none;
-            }
+            .produkt:hover,
+            .hero-felt:hover { transform: none; }
         }
     </style>
 </head>
@@ -1241,6 +1823,12 @@
             <rect x="5" y="26" width="8" height="13" rx="3"/>
             <rect x="35" y="26" width="8" height="13" rx="3"/>
             <path d="M39 39v1a4 4 0 0 1-4 4h-7"/>
+        </symbol>
+        <symbol id="ikon-alle" viewBox="0 0 24 24">
+            <rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/>
+            <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/>
+            <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/>
+            <circle cx="16.75" cy="16.75" r="3.25"/>
         </symbol>
         <symbol id="ikon-soeg" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="7"/>
@@ -1272,12 +1860,37 @@
         <symbol id="ikon-pil-op" viewBox="0 0 24 24">
             <path d="M12 19V5M5 12l7-7 7 7"/>
         </symbol>
+        <symbol id="ikon-filter" viewBox="0 0 24 24">
+            <path d="M4 6h16M7 12h10M10 18h4"/>
+        </symbol>
+        <symbol id="ikon-sorter" viewBox="0 0 24 24">
+            <path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/>
+        </symbol>
+        <symbol id="ikon-lyn" viewBox="0 0 24 24">
+            <path d="M13 3 4 14h7l-1 7 9-11h-7z"/>
+        </symbol>
+        <symbol id="ikon-fragt" viewBox="0 0 24 24">
+            <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/>
+            <circle cx="7" cy="17.5" r="1.8"/>
+            <circle cx="17" cy="17.5" r="1.8"/>
+        </symbol>
+        <symbol id="ikon-retur" viewBox="0 0 24 24">
+            <path d="M4 10h11a5 5 0 0 1 0 10H9"/>
+            <path d="m8 6-4 4 4 4"/>
+        </symbol>
+        <symbol id="ikon-skjold" viewBox="0 0 24 24">
+            <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/>
+            <path d="m9 12 2 2 4-4"/>
+        </symbol>
     </svg>
 
     <!-- ===== TOPBJÆLKE ===== -->
     <header class="header">
         <div class="indhold">
-            <a class="logo" href="#top">Gaming <span>Webshop</span></a>
+            <a class="logo" href="#top">
+                <span class="logo-maerke"><svg class="ikon" aria-hidden="true"><use href="#ikon-lyn"/></svg></span>
+                <span>Gaming</span> <span>Webshop</span>
+            </a>
 
             <div class="soeg" role="search">
                 <svg class="ikon soeg-ikon" aria-hidden="true"><use href="#ikon-soeg"/></svg>
@@ -1298,72 +1911,169 @@
     <section class="hero" aria-labelledby="hero-titel">
         <div class="indhold">
             <div>
-                <p class="hero-etiket">Gaming-udstyr</p>
+                <p class="hero-etiket">Nye tilbud hver uge</p>
                 <h1 id="hero-titel">Udstyr til dit <span>setup</span></h1>
-                <p class="hero-tekst">Mus, tastaturer og headsets fra de mærker, du kender. Søg, vælg et mærke og sortér efter pris. Gem dine favoritter, og læg varer i kurven.</p>
+                <p class="hero-tekst">Mus, tastaturer og headsets fra de mærker, du kender. Filtrér på mærke, pris og bedømmelse, og find præcis det udstyr, der passer til dig.</p>
                 <div class="hero-knapper">
                     <a class="knap-primaer" href="#produkter">Se produkter</a>
-                    <button class="knap-sekundaer" type="button" id="hero-kurv">
-                        <svg class="ikon" aria-hidden="true"><use href="#ikon-kurv"/></svg>
-                        Åbn kurv
-                    </button>
+                    <button class="knap-sekundaer" type="button" id="hero-tilbud">Se tilbud</button>
                 </div>
                 <!-- Tallene regnes ud fra produktlisten i JavaScript -->
                 <ul class="hero-tal">
                     <li><strong id="tal-produkter">12</strong><span>produkter</span></li>
                     <li><strong id="tal-maerker">4</strong><span>mærker</span></li>
-                    <li><strong id="tal-kategorier">3</strong><span>kategorier</span></li>
+                    <li><strong id="tal-rating">4,6</strong><span>gns. bedømmelse</span></li>
                 </ul>
             </div>
 
-            <div class="hero-visual" aria-hidden="true">
-                <div class="hero-felt"><svg><use href="#ikon-tastatur"/></svg><span>Tastaturer</span></div>
-                <div class="hero-felt"><svg><use href="#ikon-mus"/></svg><span>Mus</span></div>
-                <div class="hero-felt"><svg><use href="#ikon-headset"/></svg><span>Headsets</span></div>
+            <!-- Klik på et felt for at se den kategori -->
+            <div class="hero-visual">
+                <button class="hero-felt" type="button" data-hero-kategori="Tastatur">
+                    <small data-hero-antal="Tastatur"></small>
+                    <svg aria-hidden="true"><use href="#ikon-tastatur"/></svg><span>Tastaturer</span>
+                </button>
+                <button class="hero-felt" type="button" data-hero-kategori="Mus">
+                    <small data-hero-antal="Mus"></small>
+                    <svg aria-hidden="true"><use href="#ikon-mus"/></svg><span>Mus</span>
+                </button>
+                <button class="hero-felt" type="button" data-hero-kategori="Headset">
+                    <small data-hero-antal="Headset"></small>
+                    <svg aria-hidden="true"><use href="#ikon-headset"/></svg><span>Headsets</span>
+                </button>
             </div>
         </div>
     </section>
 
+    <div class="fordele">
+        <ul class="indhold">
+            <li><svg class="ikon" aria-hidden="true"><use href="#ikon-fragt"/></svg><span><strong>Fri fragt over 499 kr.</strong>Levering på 1-2 hverdage</span></li>
+            <li><svg class="ikon" aria-hidden="true"><use href="#ikon-retur"/></svg><span><strong>30 dages returret</strong>Fortryd uden besvær</span></li>
+            <li><svg class="ikon" aria-hidden="true"><use href="#ikon-skjold"/></svg><span><strong>2 års garanti</strong>På alt udstyr</span></li>
+        </ul>
+    </div>
+
     <div class="indhold layout">
 
-        <!-- ===== BOKS MED FILTRE ===== -->
-        <aside class="boks" aria-label="Filtre">
-            <div class="boks-del">
-                <h2 class="boks-titel">Mærke</h2>
-                <!-- Knapperne laves automatisk ud fra produktlisten -->
-                <div class="maerke-liste" id="maerke-liste"></div>
+        <!-- ===== FILTERBOKS ===== -->
+        <aside class="boks" id="filtre" aria-label="Filtre">
+            <div class="boks-top">
+                <h2><svg class="ikon" aria-hidden="true"><use href="#ikon-filter"/></svg>Filtre</h2>
+                <div class="boks-top-hoejre">
+                    <button class="link-knap" type="button" id="filtre-nulstil">Nulstil</button>
+                    <button class="boks-luk" type="button" id="filtre-luk" aria-label="Luk filtre">
+                        <svg class="ikon" aria-hidden="true"><use href="#ikon-luk"/></svg>
+                    </button>
+                </div>
             </div>
 
-            <div class="boks-del">
-                <label class="boks-titel" for="pris-valg">Pris</label>
-                <select class="pris-valg" id="pris-valg">
-                    <option value="standard">Standard</option>
-                    <option value="lav">Laveste pris først</option>
-                    <option value="hoej">Højeste pris først</option>
-                </select>
+            <div class="boks-krop">
+                <details class="gruppe" open>
+                    <summary>Mærke</summary>
+                    <!-- Afkrydsningsfelterne laves automatisk ud fra produktlisten -->
+                    <div class="gruppe-indhold" id="maerke-liste"></div>
+                </details>
+
+                <details class="gruppe" open>
+                    <summary>Pris</summary>
+                    <div class="gruppe-indhold">
+                        <div class="pris-tal">
+                            <output id="pris-min-vis">0 kr.</output>
+                            <span>–</span>
+                            <output id="pris-max-vis">0 kr.</output>
+                        </div>
+                        <div class="pris-slider" id="pris-slider">
+                            <div class="pris-spor"><div class="pris-fyld"></div></div>
+                            <input type="range" id="pris-min" aria-label="Mindste pris">
+                            <input type="range" id="pris-max" aria-label="Højeste pris">
+                        </div>
+                    </div>
+                </details>
+
+                <details class="gruppe" open>
+                    <summary>Bedømmelse</summary>
+                    <div class="gruppe-indhold" id="rating-liste">
+                        <label class="valg">
+                            <input type="radio" name="rating" value="0">
+                            <span class="boks-tegn" aria-hidden="true"></span>
+                            <span class="valg-navn">Alle</span>
+                        </label>
+                        <label class="valg">
+                            <input type="radio" name="rating" value="4.5">
+                            <span class="boks-tegn" aria-hidden="true"></span>
+                            <span class="valg-navn"><span class="stjerner" style="--v:4.5" aria-hidden="true">★★★★★</span> 4,5 og op</span>
+                            <span class="valg-antal" data-rating-antal="4.5">0</span>
+                        </label>
+                        <label class="valg">
+                            <input type="radio" name="rating" value="4">
+                            <span class="boks-tegn" aria-hidden="true"></span>
+                            <span class="valg-navn"><span class="stjerner" style="--v:4" aria-hidden="true">★★★★★</span> 4 og op</span>
+                            <span class="valg-antal" data-rating-antal="4">0</span>
+                        </label>
+                    </div>
+                </details>
+
+                <details class="gruppe" open>
+                    <summary>Mere</summary>
+                    <div class="gruppe-indhold">
+                        <label class="kontakt">
+                            <span>Kun på lager</span>
+                            <input type="checkbox" id="kun-lager">
+                            <span class="kontakt-spor" aria-hidden="true"></span>
+                        </label>
+                        <label class="kontakt">
+                            <span>Kun tilbud</span>
+                            <input type="checkbox" id="kun-tilbud">
+                            <span class="kontakt-spor" aria-hidden="true"></span>
+                        </label>
+                        <label class="kontakt">
+                            <span>Kun favoritter <small>(<span id="fav-antal">0</span>)</small></span>
+                            <input type="checkbox" id="kun-favoritter">
+                            <span class="kontakt-spor" aria-hidden="true"></span>
+                        </label>
+                    </div>
+                </details>
             </div>
 
-            <div class="boks-del">
-                <h2 class="boks-titel">Favoritter</h2>
-                <label class="kontakt">
-                    <input type="checkbox" id="kun-favoritter">
-                    <span class="kontakt-spor" aria-hidden="true"></span>
-                    <span>Vis kun favoritter (<span id="fav-antal">0</span>)</span>
-                </label>
+            <!-- Kun på mobil: lukker boksen og viser resultatet -->
+            <div class="boks-bund">
+                <button class="knap-primaer" type="button" id="filtre-vis">Vis produkter</button>
             </div>
         </aside>
+        <div class="sloer" id="sloer" hidden></div>
 
         <!-- ===== PRODUKTER ===== -->
         <main id="produkter">
+            <!-- Fanerne laves automatisk ud fra kategorierne -->
+            <div class="faner" id="faner" role="group" aria-label="Kategori"></div>
+
             <div class="vaerktoej">
-                <p class="antal-vist" id="antal-vist" tabindex="-1" aria-live="polite">Viser 12 af 12 produkter</p>
-                <div class="visning" role="group" aria-label="Visning">
-                    <button class="visning-knap" type="button" data-visning="gitter" aria-pressed="true" aria-label="Vis som gitter">
-                        <svg class="ikon" aria-hidden="true"><use href="#ikon-gitter"/></svg>
+                <p class="antal-vist" id="antal-vist" tabindex="-1" aria-live="polite"></p>
+                <div class="vaerktoej-hoejre">
+                    <button class="filter-aabn" type="button" id="filtre-aabn" aria-controls="filtre" aria-expanded="false">
+                        <svg class="ikon" aria-hidden="true"><use href="#ikon-filter"/></svg>
+                        Filtre
+                        <span class="kurv-antal" id="filtre-antal" hidden>0</span>
                     </button>
-                    <button class="visning-knap" type="button" data-visning="liste" aria-pressed="false" aria-label="Vis som liste">
-                        <svg class="ikon" aria-hidden="true"><use href="#ikon-liste"/></svg>
-                    </button>
+                    <div class="sortering">
+                        <svg class="ikon" aria-hidden="true"><use href="#ikon-sorter"/></svg>
+                        <label class="skjult" for="sortering">Sortér efter</label>
+                        <select id="sortering">
+                            <option value="anbefalet">Anbefalet</option>
+                            <option value="pris-lav">Pris: lav til høj</option>
+                            <option value="pris-hoej">Pris: høj til lav</option>
+                            <option value="rating">Bedst bedømt</option>
+                            <option value="rabat">Største rabat</option>
+                            <option value="navn">Navn: A–Å</option>
+                        </select>
+                    </div>
+                    <div class="visning" role="group" aria-label="Visning">
+                        <button class="visning-knap" type="button" data-visning="gitter" aria-pressed="true" aria-label="Vis som gitter">
+                            <svg class="ikon" aria-hidden="true"><use href="#ikon-gitter"/></svg>
+                        </button>
+                        <button class="visning-knap" type="button" data-visning="liste" aria-pressed="false" aria-label="Vis som liste">
+                            <svg class="ikon" aria-hidden="true"><use href="#ikon-liste"/></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="aktive-filtre" id="aktive-filtre"></div>
@@ -1375,7 +2085,10 @@
 
     <footer class="bund">
         <div class="indhold">
-            <a class="logo" href="#top">Gaming <span>Webshop</span></a>
+            <a class="logo" href="#top">
+                <span class="logo-maerke"><svg class="ikon" aria-hidden="true"><use href="#ikon-lyn"/></svg></span>
+                <span>Gaming</span> <span>Webshop</span>
+            </a>
             <p>&copy; <span id="aar">2026</span> Gaming Webshop</p>
         </div>
     </footer>
@@ -1389,12 +2102,19 @@
                     <svg class="ikon" aria-hidden="true"><use href="#ikon-luk"/></svg>
                 </button>
             </div>
+            <div class="fragt" id="fragt">
+                <p id="fragt-tekst"></p>
+                <div class="fragt-bar"><span id="fragt-bar"></span></div>
+            </div>
             <div class="kurv-liste" id="kurv-liste"></div>
             <div class="kurv-bund">
+                <div class="kurv-linje"><span>Varer</span><span id="kurv-subtotal">0 kr.</span></div>
+                <div class="kurv-linje"><span>Fragt</span><span id="kurv-fragt">0 kr.</span></div>
                 <div class="kurv-total">
                     <span>I alt</span>
                     <strong id="kurv-total">0 kr.</strong>
                 </div>
+                <button class="knap-primaer" type="button" id="kurv-kassen">Gå til kassen</button>
                 <button class="knap-sekundaer" type="button" id="kurv-fortsaet">Fortsæt med at handle</button>
             </div>
         </div>
@@ -1409,40 +2129,62 @@
     <script>
         // ===== PRODUKTER =====
         // Tilføj, ret eller slet produkter her. id skal være unikt.
+        // rating: 0-5, anmeldelser: antal, lager: antal på lager (0 = udsolgt)
         const produkter = [
-            { id: 'g502x', maerke: 'Logitech', kategori: 'Mus', navn: 'Logitech G502 X Lightspeed', pris: 1099,
+            { id: 'g502x', maerke: 'Logitech', kategori: 'Mus', navn: 'Logitech G502 X Lightspeed', pris: 999, foerPris: 1199,
+              rating: 4.7, anmeldelser: 1284, lager: 23, maerkat: 'Bestseller',
               beskrivelse: 'Trådløs gamingmus med HERO 25K-sensor og hybride kontakter. God til dig, der vil have mange programmerbare knapper.' },
             { id: 'gprox-tkl', maerke: 'Logitech', kategori: 'Tastatur', navn: 'Logitech G Pro X TKL Lightspeed', pris: 1799,
+              rating: 4.5, anmeldelser: 412, lager: 8,
               beskrivelse: 'Trådløst mekanisk tastatur uden numerisk tastatur. Giver mere plads til musen på bordet.' },
             { id: 'gprox2', maerke: 'Logitech', kategori: 'Headset', navn: 'Logitech G Pro X 2 Lightspeed', pris: 1999,
+              rating: 4.6, anmeldelser: 538, lager: 3, maerkat: 'Nyhed',
               beskrivelse: 'Trådløst headset med 50 mm grafen-drivere og aftagelig mikrofon. Lavet til lange gaming-sessioner.' },
 
             { id: 'deathadder-v3', maerke: 'Razer', kategori: 'Mus', navn: 'Razer DeathAdder V3 Pro', pris: 1199,
+              rating: 4.8, anmeldelser: 967, lager: 15, maerkat: 'Bestseller',
               beskrivelse: 'Ergonomisk trådløs mus på kun 63 gram. Et godt valg til hurtige skydespil.' },
-            { id: 'huntsman-v3', maerke: 'Razer', kategori: 'Tastatur', navn: 'Razer Huntsman V3 Pro', pris: 1999,
+            { id: 'huntsman-v3', maerke: 'Razer', kategori: 'Tastatur', navn: 'Razer Huntsman V3 Pro', pris: 1799, foerPris: 1999,
+              rating: 4.4, anmeldelser: 231, lager: 6,
               beskrivelse: 'Tastatur i fuld størrelse med analoge optiske kontakter, hvor du selv kan justere, hvor langt en tast skal trykkes ned.' },
             { id: 'blackshark-v2', maerke: 'Razer', kategori: 'Headset', navn: 'Razer BlackShark V2 Pro', pris: 1399,
+              rating: 4.5, anmeldelser: 689, lager: 0,
               beskrivelse: 'Trådløst headset med 50 mm drivere og aftagelig mikrofon, så dine holdkammerater kan høre dig tydeligt.' },
 
-            { id: 'aerox5', maerke: 'SteelSeries', kategori: 'Mus', navn: 'SteelSeries Aerox 5 Wireless', pris: 1099,
+            { id: 'aerox5', maerke: 'SteelSeries', kategori: 'Mus', navn: 'SteelSeries Aerox 5 Wireless', pris: 899, foerPris: 1099,
+              rating: 4.2, anmeldelser: 305, lager: 12,
               beskrivelse: 'Let trådløs mus på 74 gram med hulmønster i skallen og ekstra sideknapper til MMO- og battle royale-spil.' },
             { id: 'apex-pro-tkl', maerke: 'SteelSeries', kategori: 'Tastatur', navn: 'SteelSeries Apex Pro TKL', pris: 1699,
+              rating: 4.7, anmeldelser: 846, lager: 4, maerkat: 'Nyhed',
               beskrivelse: 'Kompakt tastatur med justerbare OmniPoint-kontakter. Du bestemmer selv, hvor følsom hver tast skal være.' },
             { id: 'arctis-nova-pro', maerke: 'SteelSeries', kategori: 'Headset', navn: 'SteelSeries Arctis Nova Pro Wireless', pris: 2799,
+              rating: 4.6, anmeldelser: 1032, lager: 9,
               beskrivelse: 'Trådløst headset med aktiv støjreduktion og to udskiftelige batterier, så du kan skifte batteri uden at stoppe.' },
 
             { id: 'm75-air', maerke: 'Corsair', kategori: 'Mus', navn: 'Corsair M75 Air Wireless', pris: 999,
+              rating: 4.3, anmeldelser: 158, lager: 18,
               beskrivelse: 'Ultralet trådløs mus på 60 gram med en enkel form. God til dig, der vil have en mus, der næsten ikke føles.' },
-            { id: 'k70-pro', maerke: 'Corsair', kategori: 'Tastatur', navn: 'Corsair K70 RGB Pro', pris: 1299,
+            { id: 'k70-pro', maerke: 'Corsair', kategori: 'Tastatur', navn: 'Corsair K70 RGB Pro', pris: 1099, foerPris: 1299,
+              rating: 4.5, anmeldelser: 1490, lager: 27,
               beskrivelse: 'Mekanisk tastatur i fuld størrelse med solid aluminiumsramme, RGB-lys og medieknapper.' },
             { id: 'hs80', maerke: 'Corsair', kategori: 'Headset', navn: 'Corsair HS80 RGB Wireless', pris: 1099,
+              rating: 4.1, anmeldelser: 377, lager: 2,
               beskrivelse: 'Trådløst headset med Dolby Atmos og en klar mikrofon. Komfortabelt hovedbånd til mange timers brug.' },
         ];
 
         const ikoner = { Mus: 'ikon-mus', Tastatur: 'ikon-tastatur', Headset: 'ikon-headset' };
+        const kategoriNavne = { Mus: 'Mus', Tastatur: 'Tastaturer', Headset: 'Headsets' };
 
-        // Mærkerne i den rækkefølge, de står i listen ovenfor
-        const maerker = [...new Set(produkter.map(function (p) { return p.maerke; }))];
+        const FRI_FRAGT = 499;   // fri fragt fra dette beløb
+        const FRAGT_PRIS = 49;
+        const PRIS_TRIN = 50;    // skyderne hopper 50 kr. ad gangen
+
+        const maerker = [...new Set(produkter.map(function (p) { return p.maerke; }))].sort();
+        const kategorier = [...new Set(produkter.map(function (p) { return p.kategori; }))];
+
+        // Laveste og højeste pris, rundet til nærmeste trin
+        const prisGulv = Math.floor(Math.min.apply(null, produkter.map(function (p) { return p.pris; })) / PRIS_TRIN) * PRIS_TRIN;
+        const prisLoft = Math.ceil(Math.max.apply(null, produkter.map(function (p) { return p.pris; })) / PRIS_TRIN) * PRIS_TRIN;
 
         // ===== GEM I BROWSEREN =====
         // try/catch, fordi localStorage kan være slået fra (fx i privat vindue)
@@ -1464,13 +2206,24 @@
         }
 
         // ===== TILSTAND: hvad brugeren har valgt lige nu =====
-        const tilstand = {
-            maerke: 'alle',
-            sortering: 'standard',
-            soegning: '',
-            kunFavoritter: false,
+        function standardFiltre() {
+            return {
+                kategori: 'alle',
+                maerker: new Set(),
+                prisMin: prisGulv,
+                prisMax: prisLoft,
+                minRating: 0,
+                kunLager: false,
+                kunTilbud: false,
+                kunFavoritter: false,
+                soegning: '',
+            };
+        }
+
+        const tilstand = Object.assign(standardFiltre(), {
+            sortering: 'anbefalet',
             visning: hent('visning', 'gitter'),
-        };
+        });
 
         let kurv = hent('kurv', {});          // fx { g502x: 2 }
         let favoritter = new Set(hent('favoritter', []));
@@ -1494,6 +2247,11 @@
             return tal.toLocaleString('da-DK') + ' kr.';
         }
 
+        // 4.5 bliver til "4,5"
+        function decimal(tal) {
+            return tal.toLocaleString('da-DK', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        }
+
         // Gør tekst sikker, før den sættes ind i HTML (bruges til det, brugeren skriver)
         function sikker(tekst) {
             return String(tekst).replace(/[&<>"']/g, function (tegn) {
@@ -1505,106 +2263,174 @@
             return antal + ' ' + (antal === 1 ? en : flere);
         }
 
+        function rabat(p) {
+            return p.foerPris ? Math.round((1 - p.pris / p.foerPris) * 100) : 0;
+        }
+
         const el = {
+            faner: $('#faner'),
             maerkeListe: $('#maerke-liste'),
-            prisValg: $('#pris-valg'),
-            soeg: $('#soeg'),
+            ratingListe: $('#rating-liste'),
+            prisMin: $('#pris-min'),
+            prisMax: $('#pris-max'),
+            prisMinVis: $('#pris-min-vis'),
+            prisMaxVis: $('#pris-max-vis'),
+            prisSlider: $('#pris-slider'),
+            kunLager: $('#kun-lager'),
+            kunTilbud: $('#kun-tilbud'),
             kunFavoritter: $('#kun-favoritter'),
             favAntal: $('#fav-antal'),
+            sortering: $('#sortering'),
+            soeg: $('#soeg'),
             antalVist: $('#antal-vist'),
             aktiveFiltre: $('#aktive-filtre'),
             indhold: $('#produkt-indhold'),
             visningKnapper: document.querySelectorAll('.visning-knap'),
             header: $('.header'),
             produkterStart: $('#produkter'),
+            filtre: $('#filtre'),
+            filtreAabn: $('#filtre-aabn'),
+            filtreAntal: $('#filtre-antal'),
+            filtreLuk: $('#filtre-luk'),
+            filtreVis: $('#filtre-vis'),
+            filtreNulstil: $('#filtre-nulstil'),
+            sloer: $('#sloer'),
             kurvKnap: $('#kurv-knap'),
             kurvAntal: $('#kurv-antal'),
             kurv: $('#kurv'),
             kurvListe: $('#kurv-liste'),
+            kurvSubtotal: $('#kurv-subtotal'),
+            kurvFragt: $('#kurv-fragt'),
             kurvTotal: $('#kurv-total'),
+            fragtTekst: $('#fragt-tekst'),
+            fragtBar: $('#fragt-bar'),
             kurvLuk: $('#kurv-luk'),
             toast: $('#toast'),
             tilTop: $('#til-top'),
         };
 
-        // ===== MÆRKE-KNAPPER (laves ud fra produktlisten) =====
-        function lavMaerkeKnapper() {
-            const valg = ['alle'].concat(maerker);
-            el.maerkeListe.innerHTML = valg.map(function (m) {
-                const antal = m === 'alle' ? produkter.length : produkter.filter(function (p) { return p.maerke === m; }).length;
-                const navn = m === 'alle' ? 'Alle mærker' : m;
-                return '<button class="maerke-knap" type="button" data-maerke="' + m + '" aria-pressed="false">' +
-                    '<span>' + navn + '</span><span class="maerke-antal">' + antal + '</span></button>';
+        // ===== LAV FILTRENE UD FRA PRODUKTLISTEN =====
+        function lavFaner() {
+            const valg = ['alle'].concat(kategorier);
+            el.faner.innerHTML = valg.map(function (k) {
+                const ikon = k === 'alle' ? 'ikon-alle' : ikoner[k];
+                const navn = k === 'alle' ? 'Alle' : kategoriNavne[k] || k;
+                return '<button class="fane" type="button" data-kategori="' + k + '" aria-pressed="false">' +
+                    '<svg class="ikon" aria-hidden="true"><use href="#' + ikon + '"/></svg>' +
+                    '<span>' + navn + '</span><span class="fane-antal" data-fane-antal="' + k + '">0</span></button>';
             }).join('');
         }
 
-        // ===== FILTRERING OG SORTERING =====
-        function filtreredeProdukter() {
-            const s = tilstand.soegning.trim().toLowerCase();
-            return produkter.filter(function (p) {
-                const passerMaerke = tilstand.maerke === 'alle' || p.maerke === tilstand.maerke;
-                const passerFavorit = !tilstand.kunFavoritter || favoritter.has(p.id);
-                const tekst = (p.navn + ' ' + p.maerke + ' ' + p.kategori + ' ' + p.beskrivelse).toLowerCase();
-                const passerSoegning = !s || tekst.includes(s);
-                return passerMaerke && passerFavorit && passerSoegning;
+        function lavMaerkeValg() {
+            el.maerkeListe.innerHTML = maerker.map(function (m) {
+                return '<label class="valg" data-maerke-valg="' + m + '">' +
+                    '<input type="checkbox" value="' + m + '">' +
+                    '<span class="boks-tegn" aria-hidden="true"></span>' +
+                    '<span class="valg-navn">' + m + '</span>' +
+                    '<span class="valg-antal">0</span></label>';
+            }).join('');
+        }
+
+        function opsaetPrisSlider() {
+            [el.prisMin, el.prisMax].forEach(function (input) {
+                input.min = prisGulv;
+                input.max = prisLoft;
+                input.step = PRIS_TRIN;
             });
         }
 
-        // Sorterer inden for hvert mærke, så produkterne stadig er fordelt efter mærker
-        function sorter(liste) {
-            const kopi = liste.slice();
-            if (tilstand.sortering === 'lav') {
-                kopi.sort(function (a, b) { return a.pris - b.pris; });
-            } else if (tilstand.sortering === 'hoej') {
-                kopi.sort(function (a, b) { return b.pris - a.pris; });
+        // ===== FILTRERING =====
+        // "undtag" bruges til at tælle: fx hvor mange produkter der er for hvert mærke,
+        // hvis alle de ANDRE filtre stadig gælder.
+        function passer(p, undtag) {
+            const t = tilstand;
+            const s = t.soegning.trim().toLowerCase();
+
+            if (undtag !== 'kategori' && t.kategori !== 'alle' && p.kategori !== t.kategori) return false;
+            if (undtag !== 'maerke' && t.maerker.size > 0 && !t.maerker.has(p.maerke)) return false;
+            if (undtag !== 'pris' && (p.pris < t.prisMin || p.pris > t.prisMax)) return false;
+            if (undtag !== 'rating' && p.rating < t.minRating) return false;
+            if (t.kunLager && p.lager === 0) return false;
+            if (t.kunTilbud && !p.foerPris) return false;
+            if (t.kunFavoritter && !favoritter.has(p.id)) return false;
+
+            if (s) {
+                const tekst = (p.navn + ' ' + p.maerke + ' ' + p.kategori + ' ' + p.beskrivelse).toLowerCase();
+                if (!tekst.includes(s)) return false;
             }
-            return kopi;
+            return true;
         }
 
-        // ===== TEGN PRODUKTERNE =====
-        function kortHtml(p) {
+        // ===== SORTERING =====
+        const sorteringer = {
+            anbefalet: function (a, b) { return score(b) - score(a); },
+            'pris-lav': function (a, b) { return a.pris - b.pris; },
+            'pris-hoej': function (a, b) { return b.pris - a.pris; },
+            rating: function (a, b) { return b.rating - a.rating || b.anmeldelser - a.anmeldelser; },
+            rabat: function (a, b) { return rabat(b) - rabat(a) || a.pris - b.pris; },
+            navn: function (a, b) { return a.navn.localeCompare(b.navn, 'da'); },
+        };
+
+        // Gode bedømmelser med mange anmeldelser kommer først. Udsolgte kommer sidst.
+        function score(p) {
+            return p.rating * Math.log10(p.anmeldelser + 10) - (p.lager === 0 ? 100 : 0);
+        }
+
+        // ===== TEGN ET PRODUKTKORT =====
+        function lagerHtml(p) {
+            if (p.lager === 0) return '<p class="lager udsolgt">Udsolgt</p>';
+            if (p.lager <= 5) return '<p class="lager faa">Kun ' + p.lager + ' tilbage</p>';
+            return '<p class="lager ok">På lager</p>';
+        }
+
+        function kortHtml(p, nr) {
             const erFavorit = favoritter.has(p.id);
+            const procent = rabat(p);
+            const maerkater =
+                (procent ? '<span class="maerkat rabat">−' + procent + '%</span>' : '') +
+                (p.maerkat ? '<span class="maerkat">' + p.maerkat + '</span>' : '');
+
             return '' +
-                '<article class="produkt">' +
+                '<article class="produkt' + (p.foerPris ? ' er-tilbud' : '') + '" style="--i:' + Math.min(nr, 12) + '">' +
                     '<div class="produkt-billede">' +
+                        '<div class="maerkater">' + maerkater + '</div>' +
                         '<svg aria-hidden="true"><use href="#' + ikoner[p.kategori] + '"/></svg>' +
                         '<button class="favorit" type="button" data-favorit="' + p.id + '" aria-pressed="' + erFavorit + '" aria-label="Gem ' + p.navn + ' som favorit">' +
                             '<svg class="ikon" aria-hidden="true"><use href="#ikon-hjerte"/></svg>' +
                         '</button>' +
                     '</div>' +
                     '<div class="produkt-tekst">' +
-                        '<span class="kategori">' + p.kategori + '</span>' +
+                        '<div class="produkt-meta"><span class="kategori">' + p.kategori + '</span><span class="maerke-navn">' + p.maerke + '</span></div>' +
                         '<h3>' + p.navn + '</h3>' +
+                        '<div class="bedoemmelse">' +
+                            '<span class="stjerner" style="--v:' + p.rating + '" aria-hidden="true">★★★★★</span>' +
+                            '<span><strong>' + decimal(p.rating) + '</strong> (' + p.anmeldelser.toLocaleString('da-DK') + ')</span>' +
+                            '<span class="skjult">' + decimal(p.rating) + ' ud af 5 stjerner, ' + p.anmeldelser + ' anmeldelser</span>' +
+                        '</div>' +
                         '<p class="beskrivelse">' + p.beskrivelse + '</p>' +
+                        lagerHtml(p) +
                     '</div>' +
-                    '<div class="pris-bjaelke">' +
-                        '<p class="pris">' + kr(p.pris) + '</p>' +
-                        '<button class="kurv-knap" type="button" data-kurv="' + p.id + '" aria-label="Læg ' + p.navn + ' i kurven">' +
-                            '<svg class="ikon" aria-hidden="true"><use href="#ikon-plus"/></svg>Læg i kurv' +
-                        '</button>' +
+                    '<div class="produkt-bund">' +
+                        '<div class="priser">' +
+                            '<span class="pris">' + kr(p.pris) + '</span>' +
+                            (p.foerPris ? '<s class="foer-pris"><span class="skjult">Før </span>' + kr(p.foerPris) + '</s>' : '') +
+                        '</div>' +
+                        (p.lager === 0
+                            ? '<button class="kurv-knap" type="button" disabled>Udsolgt</button>'
+                            : '<button class="kurv-knap" type="button" data-kurv="' + p.id + '" aria-label="Læg ' + p.navn + ' i kurven">' +
+                                '<svg class="ikon" aria-hidden="true"><use href="#ikon-plus"/></svg>Læg i kurv</button>') +
                     '</div>' +
                 '</article>';
         }
 
+        // ===== VIS PRODUKTERNE =====
         function visProdukter() {
-            const liste = filtreredeProdukter();
-
-            const sektioner = maerker.map(function (m) {
-                const varer = sorter(liste.filter(function (p) { return p.maerke === m; }));
-                if (varer.length === 0) return '';
-                return '' +
-                    '<section class="maerke-sektion">' +
-                        '<div class="maerke-top">' +
-                            '<h2>' + m + '</h2>' +
-                            '<span class="antal">' + flertal(varer.length, 'produkt', 'produkter') + '</span>' +
-                        '</div>' +
-                        '<div class="produkter">' + varer.map(kortHtml).join('') + '</div>' +
-                    '</section>';
-            }).join('');
+            const liste = produkter.filter(function (p) { return passer(p); }).sort(sorteringer[tilstand.sortering]);
 
             if (liste.length === 0) {
                 el.indhold.innerHTML = '' +
                     '<div class="tom">' +
+                        '<svg class="ikon" aria-hidden="true"><use href="#ikon-soeg"/></svg>' +
                         '<h2>Ingen produkter fundet</h2>' +
                         '<p>' + (tilstand.kunFavoritter && favoritter.size === 0
                             ? 'Du har ingen favoritter endnu. Tryk på hjertet ved et produkt for at gemme det.'
@@ -1612,31 +2438,98 @@
                         '<button class="knap-primaer" type="button" data-nulstil>Nulstil filtre</button>' +
                     '</div>';
             } else {
-                el.indhold.innerHTML = sektioner;
+                el.indhold.innerHTML = '<div class="produkter">' + liste.map(kortHtml).join('') + '</div>';
             }
 
             el.indhold.classList.toggle('liste-visning', tilstand.visning === 'liste');
-            el.antalVist.textContent = 'Viser ' + liste.length + ' af ' + flertal(produkter.length, 'produkt', 'produkter');
+            el.antalVist.innerHTML = '<strong>' + liste.length + '</strong> af ' + flertal(produkter.length, 'produkt', 'produkter');
+            el.filtreVis.textContent = 'Vis ' + flertal(liste.length, 'produkt', 'produkter');
 
-            el.maerkeListe.querySelectorAll('.maerke-knap').forEach(function (knap) {
-                knap.setAttribute('aria-pressed', knap.dataset.maerke === tilstand.maerke ? 'true' : 'false');
-            });
-            el.visningKnapper.forEach(function (knap) {
-                knap.setAttribute('aria-pressed', knap.dataset.visning === tilstand.visning ? 'true' : 'false');
-            });
-
+            opdaterTaellere();
+            opdaterKontroller();
             visAktiveFiltre();
         }
 
-        // Små "chips" der viser, hvilke filtre der er slået til. Klik fjerner filteret.
-        function visAktiveFiltre() {
+        // Tallene ved hvert filter viser, hvor mange produkter man får, hvis man vælger det
+        function opdaterTaellere() {
+            el.faner.querySelectorAll('[data-fane-antal]').forEach(function (span) {
+                const k = span.dataset.faneAntal;
+                span.textContent = produkter.filter(function (p) {
+                    return passer(p, 'kategori') && (k === 'alle' || p.kategori === k);
+                }).length;
+            });
+
+            el.maerkeListe.querySelectorAll('[data-maerke-valg]').forEach(function (label) {
+                const m = label.dataset.maerkeValg;
+                const antal = produkter.filter(function (p) { return passer(p, 'maerke') && p.maerke === m; }).length;
+                label.querySelector('.valg-antal').textContent = antal;
+                label.classList.toggle('tom-valg', antal === 0 && !tilstand.maerker.has(m));
+            });
+
+            el.ratingListe.querySelectorAll('[data-rating-antal]').forEach(function (span) {
+                const graense = Number(span.dataset.ratingAntal);
+                span.textContent = produkter.filter(function (p) { return passer(p, 'rating') && p.rating >= graense; }).length;
+            });
+        }
+
+        // Sætter alle knapper, felter og skydere, så de passer til tilstanden
+        function opdaterKontroller() {
+            const t = tilstand;
+
+            el.faner.querySelectorAll('.fane').forEach(function (knap) {
+                knap.setAttribute('aria-pressed', knap.dataset.kategori === t.kategori ? 'true' : 'false');
+            });
+            el.maerkeListe.querySelectorAll('input').forEach(function (input) {
+                input.checked = t.maerker.has(input.value);
+            });
+            el.ratingListe.querySelectorAll('input').forEach(function (input) {
+                input.checked = Number(input.value) === t.minRating;
+            });
+            el.visningKnapper.forEach(function (knap) {
+                knap.setAttribute('aria-pressed', knap.dataset.visning === t.visning ? 'true' : 'false');
+            });
+
+            el.prisMin.value = t.prisMin;
+            el.prisMax.value = t.prisMax;
+            el.prisMinVis.textContent = kr(t.prisMin);
+            el.prisMaxVis.textContent = kr(t.prisMax);
+            const spaend = prisLoft - prisGulv || 1;
+            el.prisSlider.style.setProperty('--fra', ((t.prisMin - prisGulv) / spaend * 100) + '%');
+            el.prisSlider.style.setProperty('--til', ((prisLoft - t.prisMax) / spaend * 100) + '%');
+
+            el.kunLager.checked = t.kunLager;
+            el.kunTilbud.checked = t.kunTilbud;
+            el.kunFavoritter.checked = t.kunFavoritter;
+            el.sortering.value = t.sortering;
+            if (el.soeg.value !== t.soegning) el.soeg.value = t.soegning;
+        }
+
+        // ===== AKTIVE FILTRE SOM "CHIPS" =====
+        function aktiveFiltre() {
+            const t = tilstand;
             const filtre = [];
-            if (tilstand.maerke !== 'alle') filtre.push({ noegle: 'maerke', tekst: tilstand.maerke });
-            if (tilstand.soegning.trim()) filtre.push({ noegle: 'soegning', tekst: '"' + tilstand.soegning.trim() + '"' });
-            if (tilstand.kunFavoritter) filtre.push({ noegle: 'favoritter', tekst: 'Favoritter' });
-            if (tilstand.sortering !== 'standard') {
-                filtre.push({ noegle: 'sortering', tekst: tilstand.sortering === 'lav' ? 'Laveste pris først' : 'Højeste pris først' });
+            if (t.kategori !== 'alle') filtre.push({ noegle: 'kategori', tekst: kategoriNavne[t.kategori] || t.kategori });
+            t.maerker.forEach(function (m) { filtre.push({ noegle: 'maerke', vaerdi: m, tekst: m }); });
+            if (t.prisMin !== prisGulv || t.prisMax !== prisLoft) {
+                filtre.push({ noegle: 'pris', tekst: kr(t.prisMin) + ' – ' + kr(t.prisMax) });
             }
+            if (t.minRating) filtre.push({ noegle: 'rating', tekst: decimal(t.minRating) + '★ og op' });
+            if (t.kunLager) filtre.push({ noegle: 'kunLager', tekst: 'På lager' });
+            if (t.kunTilbud) filtre.push({ noegle: 'kunTilbud', tekst: 'Tilbud' });
+            if (t.kunFavoritter) filtre.push({ noegle: 'kunFavoritter', tekst: 'Favoritter' });
+            if (t.soegning.trim()) filtre.push({ noegle: 'soegning', tekst: '"' + t.soegning.trim() + '"' });
+            return filtre;
+        }
+
+        function visAktiveFiltre() {
+            const filtre = aktiveFiltre();
+
+            // Tallet på "Filtre"-knappen (mobil) tæller ikke kategori og søgning med,
+            // fordi de ikke ligger i filterboksen
+            const iBoksen = filtre.filter(function (f) { return f.noegle !== 'kategori' && f.noegle !== 'soegning'; }).length;
+            el.filtreAntal.textContent = iBoksen;
+            el.filtreAntal.hidden = iBoksen === 0;
+            el.filtreNulstil.disabled = filtre.length === 0;
 
             if (filtre.length === 0) {
                 el.aktiveFiltre.innerHTML = '';
@@ -1644,19 +2537,30 @@
             }
 
             el.aktiveFiltre.innerHTML = filtre.map(function (f) {
-                return '<button class="chip" type="button" data-fjern="' + f.noegle + '" aria-label="Fjern filter: ' + sikker(f.tekst) + '">' +
+                return '<button class="chip" type="button" data-fjern="' + f.noegle + '"' +
+                    (f.vaerdi ? ' data-vaerdi="' + sikker(f.vaerdi) + '"' : '') +
+                    ' aria-label="Fjern filter: ' + sikker(f.tekst) + '">' +
                     sikker(f.tekst) + '<svg class="ikon" aria-hidden="true"><use href="#ikon-luk"/></svg></button>';
-            }).join('') + '<button class="chip-nulstil" type="button" data-nulstil>Nulstil alle</button>';
+            }).join('') + (filtre.length > 1 ? '<button class="chip-nulstil" type="button" data-nulstil>Ryd alle</button>' : '');
+        }
+
+        function fjernFilter(noegle, vaerdi) {
+            const standard = standardFiltre();
+            if (noegle === 'maerke') {
+                tilstand.maerker.delete(vaerdi);
+            } else if (noegle === 'pris') {
+                tilstand.prisMin = standard.prisMin;
+                tilstand.prisMax = standard.prisMax;
+            } else if (noegle === 'rating') {
+                tilstand.minRating = 0;
+            } else {
+                tilstand[noegle] = standard[noegle];
+            }
+            visProdukter();
         }
 
         function nulstil() {
-            tilstand.maerke = 'alle';
-            tilstand.sortering = 'standard';
-            tilstand.soegning = '';
-            tilstand.kunFavoritter = false;
-            el.prisValg.value = 'standard';
-            el.soeg.value = '';
-            el.kunFavoritter.checked = false;
+            Object.assign(tilstand, standardFiltre());
             visProdukter();
         }
 
@@ -1666,6 +2570,24 @@
             if (window.scrollY > start) {
                 window.scrollTo(0, start);
             }
+        }
+
+        // ===== FILTERBOKS PÅ MOBIL =====
+        function aabnFiltre() {
+            el.filtre.classList.add('aaben');
+            el.sloer.hidden = false;
+            el.filtreAabn.setAttribute('aria-expanded', 'true');
+            document.body.classList.add('laast');
+            el.filtreLuk.focus();
+        }
+
+        function lukFiltre() {
+            if (!el.filtre.classList.contains('aaben')) return;
+            el.filtre.classList.remove('aaben');
+            el.sloer.hidden = true;
+            el.filtreAabn.setAttribute('aria-expanded', 'false');
+            document.body.classList.remove('laast');
+            el.filtreAabn.focus();
         }
 
         // ===== FAVORITTER =====
@@ -1686,19 +2608,29 @@
                 el.antalVist.focus();
             } else {
                 knap.setAttribute('aria-pressed', favoritter.has(id) ? 'true' : 'false');
+                genstartAnimation(knap, 'pop');
             }
         }
 
         // ===== KURV =====
-        function laegIKurv(id) {
+        function laegIKurv(id, knap) {
+            const p = findProdukt(id);
+            if ((kurv[id] || 0) >= p.lager) {
+                visBesked('Der er kun ' + p.lager + ' stk. af ' + p.navn + ' på lager');
+                return;
+            }
             kurv[id] = (kurv[id] || 0) + 1;
             gemKurv();
-            visBesked(findProdukt(id).navn + ' er lagt i kurven');
+            visBesked(p.navn + ' er lagt i kurven');
+            genstartAnimation(el.kurvAntal, 'bump');
+            if (knap) genstartAnimation(knap, 'tilfoejet');
+        }
 
-            // Lille hop i tallet på kurv-knappen
-            el.kurvAntal.classList.remove('bump');
-            void el.kurvAntal.offsetWidth;
-            el.kurvAntal.classList.add('bump');
+        // Fjerner og tilføjer klassen igen, så animationen kører en gang til
+        function genstartAnimation(element, klasse) {
+            element.classList.remove(klasse);
+            void element.offsetWidth;
+            element.classList.add(klasse);
         }
 
         function gemKurv() {
@@ -1709,13 +2641,13 @@
         function visKurv() {
             const ider = Object.keys(kurv);
             let antalIalt = 0;
-            let total = 0;
+            let subtotal = 0;
 
             const linjer = ider.map(function (id) {
                 const p = findProdukt(id);
                 const antal = kurv[id];
                 antalIalt += antal;
-                total += antal * p.pris;
+                subtotal += antal * p.pris;
                 return '' +
                     '<li class="vare">' +
                         '<div class="vare-ikon"><svg aria-hidden="true"><use href="#' + ikoner[p.kategori] + '"/></svg></div>' +
@@ -1736,10 +2668,20 @@
             });
 
             el.kurvListe.innerHTML = ider.length === 0
-                ? '<p class="kurv-tom">Din kurv er tom.</p>'
+                ? '<div class="kurv-tom"><svg class="ikon" aria-hidden="true"><use href="#ikon-kurv"/></svg><p>Din kurv er tom.</p></div>'
                 : '<ul>' + linjer.join('') + '</ul>';
 
-            el.kurvTotal.textContent = kr(total);
+            // Fragt: gratis over grænsen, ellers en fast pris (og ingen fragt for en tom kurv)
+            const fragt = subtotal === 0 || subtotal >= FRI_FRAGT ? 0 : FRAGT_PRIS;
+            const mangler = FRI_FRAGT - subtotal;
+            el.fragtTekst.innerHTML = mangler > 0
+                ? 'Køb for <strong>' + kr(mangler) + '</strong> mere, så får du fri fragt'
+                : '<strong>Du har fri fragt!</strong>';
+            el.fragtBar.style.setProperty('--pct', Math.min(100, subtotal / FRI_FRAGT * 100) + '%');
+
+            el.kurvSubtotal.textContent = kr(subtotal);
+            el.kurvFragt.textContent = fragt === 0 ? 'Gratis' : kr(fragt);
+            el.kurvTotal.textContent = kr(subtotal + fragt);
             el.kurvAntal.textContent = antalIalt;
             el.kurvAntal.hidden = antalIalt === 0;
             el.kurvKnap.setAttribute('aria-label', 'Kurv, ' + flertal(antalIalt, 'vare', 'varer'));
@@ -1761,26 +2703,67 @@
         }
 
         // ===== HÆNDELSER =====
-        el.maerkeListe.addEventListener('click', function (e) {
-            const knap = e.target.closest('[data-maerke]');
+        el.faner.addEventListener('click', function (e) {
+            const knap = e.target.closest('[data-kategori]');
             if (!knap) return;
-            tilstand.maerke = knap.dataset.maerke;
+            tilstand.kategori = knap.dataset.kategori;
             visProdukter();
             hopTilProdukter();
         });
 
-        el.prisValg.addEventListener('change', function () {
-            tilstand.sortering = el.prisValg.value;
+        document.querySelectorAll('[data-hero-kategori]').forEach(function (knap) {
+            knap.addEventListener('click', function () {
+                tilstand.kategori = knap.dataset.heroKategori;
+                visProdukter();
+                el.produkterStart.scrollIntoView();
+            });
+        });
+
+        $('#hero-tilbud').addEventListener('click', function () {
+            nulstil();
+            tilstand.kunTilbud = true;
+            tilstand.sortering = 'rabat';
+            visProdukter();
+            el.produkterStart.scrollIntoView();
+        });
+
+        el.maerkeListe.addEventListener('change', function (e) {
+            const m = e.target.value;
+            if (e.target.checked) tilstand.maerker.add(m);
+            else tilstand.maerker.delete(m);
+            visProdukter();
+        });
+
+        el.ratingListe.addEventListener('change', function (e) {
+            tilstand.minRating = Number(e.target.value);
+            visProdukter();
+        });
+
+        // De to skydere må ikke krydse hinanden
+        el.prisMin.addEventListener('input', function () {
+            tilstand.prisMin = Math.min(Number(el.prisMin.value), tilstand.prisMax - PRIS_TRIN);
+            visProdukter();
+        });
+
+        el.prisMax.addEventListener('input', function () {
+            tilstand.prisMax = Math.max(Number(el.prisMax.value), tilstand.prisMin + PRIS_TRIN);
+            visProdukter();
+        });
+
+        [['kunLager', el.kunLager], ['kunTilbud', el.kunTilbud], ['kunFavoritter', el.kunFavoritter]].forEach(function (par) {
+            par[1].addEventListener('change', function () {
+                tilstand[par[0]] = par[1].checked;
+                visProdukter();
+            });
+        });
+
+        el.sortering.addEventListener('change', function () {
+            tilstand.sortering = el.sortering.value;
             visProdukter();
         });
 
         el.soeg.addEventListener('input', function () {
             tilstand.soegning = el.soeg.value;
-            visProdukter();
-        });
-
-        el.kunFavoritter.addEventListener('change', function () {
-            tilstand.kunFavoritter = el.kunFavoritter.checked;
             visProdukter();
         });
 
@@ -1796,7 +2779,7 @@
         el.indhold.addEventListener('click', function (e) {
             const kurvKnap = e.target.closest('[data-kurv]');
             const favoritKnap = e.target.closest('[data-favorit]');
-            if (kurvKnap) laegIKurv(kurvKnap.dataset.kurv);
+            if (kurvKnap) laegIKurv(kurvKnap.dataset.kurv, kurvKnap);
             if (favoritKnap) skiftFavorit(favoritKnap.dataset.favorit, favoritKnap);
             if (e.target.closest('[data-nulstil]')) {
                 nulstil();
@@ -1809,23 +2792,30 @@
             if (e.target.closest('[data-nulstil]')) {
                 nulstil();
             } else if (chip) {
-                const noegle = chip.dataset.fjern;
-                if (noegle === 'maerke') tilstand.maerke = 'alle';
-                if (noegle === 'soegning') { tilstand.soegning = ''; el.soeg.value = ''; }
-                if (noegle === 'favoritter') { tilstand.kunFavoritter = false; el.kunFavoritter.checked = false; }
-                if (noegle === 'sortering') { tilstand.sortering = 'standard'; el.prisValg.value = 'standard'; }
-                visProdukter();
+                fjernFilter(chip.dataset.fjern, chip.dataset.vaerdi);
             } else {
                 return;
             }
             el.antalVist.focus();
         });
 
+        // Filterboksen
+        el.filtreNulstil.addEventListener('click', nulstil);
+        el.filtreAabn.addEventListener('click', aabnFiltre);
+        el.filtreLuk.addEventListener('click', lukFiltre);
+        el.sloer.addEventListener('click', lukFiltre);
+        el.filtreVis.addEventListener('click', function () {
+            lukFiltre();
+            hopTilProdukter();
+        });
+
         // Kurven
         el.kurvKnap.addEventListener('click', aabnKurv);
-        $('#hero-kurv').addEventListener('click', aabnKurv);
         el.kurvLuk.addEventListener('click', function () { el.kurv.close(); });
         $('#kurv-fortsaet').addEventListener('click', function () { el.kurv.close(); });
+        $('#kurv-kassen').addEventListener('click', function () {
+            visBesked(Object.keys(kurv).length ? 'Kassen er ikke lavet endnu – det er en demo' : 'Din kurv er tom');
+        });
 
         // Klik på den mørke baggrund uden for kurven lukker den
         el.kurv.addEventListener('click', function (e) {
@@ -1841,6 +2831,10 @@
 
             if (d.plus) {
                 id = d.plus; attribut = 'data-plus';
+                if (kurv[id] >= findProdukt(id).lager) {
+                    visBesked('Der er ikke flere på lager');
+                    return;
+                }
                 kurv[id] += 1;
             } else if (d.minus) {
                 id = d.minus; attribut = 'data-minus';
@@ -1860,13 +2854,15 @@
             (sammeKnap || el.kurvLuk).focus();
         });
 
-        // Tryk "/" for at hoppe til søgefeltet
+        // Tastatur: "/" hopper til søgning, Escape lukker filterboksen
         document.addEventListener('keydown', function (e) {
-            const skriver = e.target.closest('input, select, textarea');
+            const skriver = e.target.closest('input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea');
             if (e.key === '/' && !skriver && !el.kurv.open) {
                 e.preventDefault();
+                lukFiltre();
                 el.soeg.focus();
             }
+            if (e.key === 'Escape') lukFiltre();
         });
 
         // Til-top-knappen vises, når man har scrollet langt ned
@@ -1879,19 +2875,26 @@
             el.soeg.focus({ preventScroll: true });
         });
 
+        // Lukker filterboksen, hvis vinduet bliver bredt (så siden ikke forbliver låst)
+        window.matchMedia('(min-width: 900px)').addEventListener('change', function (e) {
+            if (e.matches) lukFiltre();
+        });
+
         // ===== START =====
+        const gnsRating = produkter.reduce(function (sum, p) { return sum + p.rating; }, 0) / produkter.length;
         $('#tal-produkter').textContent = produkter.length;
         $('#tal-maerker').textContent = maerker.length;
-        $('#tal-kategorier').textContent = new Set(produkter.map(function (p) { return p.kategori; })).size;
+        $('#tal-rating').textContent = decimal(gnsRating);
         $('#aar').textContent = new Date().getFullYear();
-
-        // Nogle browsere husker det, man har skrevet/valgt, når siden genindlæses
-        tilstand.soegning = el.soeg.value;
-        tilstand.sortering = el.prisValg.value;
-        tilstand.kunFavoritter = el.kunFavoritter.checked;
+        document.querySelectorAll('[data-hero-antal]').forEach(function (small) {
+            const k = small.dataset.heroAntal;
+            small.textContent = produkter.filter(function (p) { return p.kategori === k; }).length + ' stk.';
+        });
 
         el.favAntal.textContent = favoritter.size;
-        lavMaerkeKnapper();
+        lavFaner();
+        lavMaerkeValg();
+        opsaetPrisSlider();
         visProdukter();
         visKurv();
     </script>
